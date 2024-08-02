@@ -10,4 +10,5 @@ export const config = {
   PORT: process.env.PORT || 8080,
   API_PATH: process.env.API_PATH || '/api/v1',
   NODE_ENV: env,
+  JWT_SECRET: process.env.JWT_SECRET || 'r78hbi8hyin',
 };

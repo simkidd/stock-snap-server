@@ -124,7 +124,7 @@ model User {
   guid            String    @default(uuid())
   name            String
   gender          String
-  avatar          String
+  avatar          String?
   email           String    @unique
   isEmailVerified Boolean   @default(false)
   password        String
@@ -133,6 +133,9 @@ model User {
   addedProducts   Product[] @relation("addedBy")
   updatedProducts Product[] @relation("updatedBy")
   sales           Sales[]
+  role            UserRole  @default(STAFF)
+  phoneNumber     String?
+  address         String?
 
   @@map("users")
 }
@@ -212,4 +215,15 @@ enum OrderStatusEnum {
   PENDING
   COMPLETED
   CANCELLED
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  SALES_REP
+  INVENTORY_CONTROLLER
+  SUPPORT
+  ACCOUNTANT
+  SUPPLIER_MANAGER
+  STAFF
 }

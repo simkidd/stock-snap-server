@@ -34,8 +34,8 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ enableDebugMessages: true }));
 
   const options = new DocumentBuilder()
-    .setTitle('PartyFun')
-    .setDescription('PartyFun API Documentation')
+    .setTitle('StockSnap')
+    .setDescription('StockSnap API Documentation')
     .setVersion('1.0')
     .addBearerAuth({
       name: 'Authorization',
