@@ -3,21 +3,18 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ProductCategory } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import {
-  CreateProductCatInput,
-  UpdateProductCatInput,
-} from '../dtos/product-category.dto';
+import { CreateCategoryInput, UpdateCategoryInput } from '../dtos/category.dto';
+import { Category } from '@prisma/client';
 import { slugify } from 'src/utils/helpers';
 
 @Injectable()
-export class ProductCategoryService {
+export class CategoryService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getAllProductCategories(): Promise<ProductCategory[]> {
+  async getAllCategories(): Promise<Category[]> {
     try {
-      const categories = await this.prisma.productCategory.findMany();
+      const categories = await this.prisma.category.findMany();
 
       return categories;
     } catch (error) {
@@ -25,13 +22,14 @@ export class ProductCategoryService {
     }
   }
 
-  async getProductCategoryById(id: string): Promise<ProductCategory> {
+  async getCategoryById(id: string): Promise<Category> {
     try {
-      const category = await this.prisma.productCategory.findUnique({
+      const category = await this.prisma.category.findUnique({
         where: { id },
+        include: { productCategories: true },
       });
       if (!category) {
-        throw new NotFoundException('product category id not found');
+        throw new NotFoundException('Category id not found');
       }
 
       return category;
@@ -40,24 +38,20 @@ export class ProductCategoryService {
     }
   }
 
-  async createProductCategory(
-    input: CreateProductCatInput,
-  ): Promise<ProductCategory> {
+  async createCategory(input: CreateCategoryInput): Promise<Category> {
     try {
       const name = input.name.toLowerCase().trim().replace(/\s+$/, '');
-      const existingCategory = await this.prisma.productCategory.findFirst({
-        where: { name, categoryId: input.categoryId },
+      const existingCategory = await this.prisma.category.findFirst({
+        where: { name },
       });
 
       if (existingCategory) {
-        throw new BadRequestException(
-          'product Category with this name already exists',
-        );
+        throw new BadRequestException('Category with this name already exists');
       }
 
       const slug = slugify(name);
 
-      const category = await this.prisma.productCategory.create({
+      const category = await this.prisma.category.create({
         data: {
           ...input,
           name,
@@ -71,19 +65,19 @@ export class ProductCategoryService {
     }
   }
 
-  async updateProductCategory(input: UpdateProductCatInput) {
+  async updateCategory(input: UpdateCategoryInput) {
     try {
       const name = input.name.toLowerCase().trim().replace(/\s+$/, '');
-      const existingCategory = await this.prisma.productCategory.findUnique({
+      const existingCategory = await this.prisma.category.findUnique({
         where: { id: input.id },
       });
       if (!existingCategory) {
-        throw new NotFoundException('Product category id not found');
+        throw new NotFoundException('category id not found');
       }
 
       const slug = slugify(name);
 
-      const category = await this.prisma.productCategory.update({
+      const category = await this.prisma.category.update({
         where: { id: input.id },
         data: {
           ...input,
@@ -97,13 +91,13 @@ export class ProductCategoryService {
     }
   }
 
-  async deleteProductCategory(id: string): Promise<ProductCategory> {
+  async deleteCategory(id: string): Promise<Category> {
     try {
-      const category = await this.prisma.productCategory.findUnique({
+      const category = await this.prisma.category.findUnique({
         where: { id },
       });
       if (!category) {
-        throw new NotFoundException('product category id not found');
+        throw new NotFoundException('Category id not found');
       }
 
       await this.prisma.category.delete({

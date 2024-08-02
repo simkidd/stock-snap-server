@@ -6,21 +6,36 @@ import { config } from './utils/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 
+const prodOrigins = [];
+
+const devOrigins = ['http://localhost:3000', 'http://localhost:5173'];
+
+const env = config.NODE_ENV;
+
+let origin: string[] | boolean;
+
+if (env == 'production') {
+  origin = prodOrigins;
+} else if (env == 'development') {
+  origin = [...prodOrigins, ...devOrigins];
+} else origin = true;
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: [],
+    origin,
     credentials: true,
   });
 
   app.use(express.json());
 
-  app.useGlobalPipes(new ValidationPipe())
+  app.setGlobalPrefix(config.API_PATH);
+  app.useGlobalPipes(new ValidationPipe({ enableDebugMessages: true }));
 
-  const builder = new DocumentBuilder()
-    .setTitle('PartyFun API Documentation')
-    .setDescription('')
+  const options = new DocumentBuilder()
+    .setTitle('PartyFun')
+    .setDescription('PartyFun API Documentation')
     .setVersion('1.0')
     .addBearerAuth({
       name: 'Authorization',
@@ -31,7 +46,7 @@ async function bootstrap() {
     })
     .build();
 
-  const doc = SwaggerModule.createDocument(app, builder);
+  const doc = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api/v1/docs', app, doc);
 
   await app.listen(config.PORT, () =>
