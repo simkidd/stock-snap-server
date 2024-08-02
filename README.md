@@ -22,4 +22,4 @@ StockSnap is an inventory management system designed to simplify product trackin
 
 ## Contact
 
-For more information, email [your-email@example.com](mailto:your-email@example.com).
+For more information, email [johnmsn22@gmail.com](mailto:johnmsn22@gmail.com).
