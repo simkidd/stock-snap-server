@@ -24,11 +24,10 @@ model Product {
   expiryDate        DateTime?
   unit              String? // Pack, Rows, Cartons, crates etc
   tags              String[]
-  brand             String
   description       String
   price             Decimal
   quantity          Int
-  quantitySold      Int
+  quantitySold      Int?
   minimumQuantity   Int
   productCategoryId String
   productCategory   ProductCategory   @relation(fields: [productCategoryId], references: [id])
@@ -44,8 +43,21 @@ model Product {
   Supplier          Supplier?         @relation(fields: [supplierId], references: [id])
   supplierId        String?
   orderProducts     OrderProduct[]
+  brand             Brand?            @relation(fields: [brandId], references: [id])
+  brandId           String?
 
   @@map("products")
+}
+
+model Brand {
+  id        String    @id @default(cuid())
+  name      String
+  imageUrl  String?
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("brands")
 }
 
 model ProductCategory {
