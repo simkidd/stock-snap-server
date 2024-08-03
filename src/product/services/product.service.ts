@@ -71,7 +71,10 @@ export class ProductService {
     }
   }
 
-  async updateProduct(input: UpdateProductInput): Promise<Product> {
+  async updateProduct(
+    input: UpdateProductInput,
+    userId: string,
+  ): Promise<Product> {
     try {
       const name = input.name.toLowerCase().trim().replace(/\s+$/, '');
       const existingProduct = await this.prisma.product.findUnique({
@@ -88,6 +91,7 @@ export class ProductService {
         data: {
           ...input,
           slug,
+          updatedById: userId,
         },
       });
 

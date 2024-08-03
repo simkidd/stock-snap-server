@@ -67,15 +67,6 @@ export class CreateProductInput {
   @IsString()
   productCategoryId: string;
 
-  @ApiProperty({ example: 'user-id' })
-  @IsString()
-  addedById: string;
-
-  @ApiProperty({ example: 'user-id' })
-  @IsOptional()
-  @IsString()
-  updatedById?: string;
-
   @ApiProperty({ example: 'supplier-id', required: false })
   @IsOptional()
   @IsString()
