@@ -14,18 +14,21 @@ import {
   UpdateProductCatInput,
 } from '../dtos/product-category.dto';
 import { Category, ProductCategory } from '@prisma/client';
+import { Public } from 'src/auth/decorators/public.decorator';
 
 @ApiTags('product category')
 @Controller('product-categories')
 export class ProductCategoryController {
   constructor(private readonly categoryService: ProductCategoryService) {}
 
+  @Public()
   @ApiOperation({ summary: 'Get all categories' })
   @Get()
   getAllCategories(): Promise<ProductCategory[]> {
     return this.categoryService.getAllProductCategories();
   }
 
+  @Public()
   @ApiOperation({ summary: 'Get a category by id' })
   @ApiResponse({ status: 200, description: 'Return a category by id.' })
   @ApiResponse({ status: 404, description: 'Category not found.' })

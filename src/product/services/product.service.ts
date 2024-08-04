@@ -90,6 +90,7 @@ export class ProductService {
         where: { id: input.id },
         data: {
           ...input,
+          name,
           slug,
           updatedById: userId,
         },

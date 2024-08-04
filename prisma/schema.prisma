@@ -59,6 +59,7 @@ model Brand {
   products  Product[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  slug      String
 
   @@map("brands")
 }
@@ -181,13 +182,15 @@ model Discount {
 }
 
 model Supplier {
-  id          String    @id @default(cuid())
-  name        String
-  contactInfo String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  products    Product[]
-  orders      Order[]
+  id             String    @id @default(cuid())
+  name           String
+  contactPhone   String?
+  contactAddress String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  products       Product[]
+  orders         Order[]
+  slug           String
 
   @@map("suppliers")
 }

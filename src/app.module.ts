@@ -15,6 +15,8 @@ import { ProductImageModule } from './product-image/product-image.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guards/auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
+import { BrandModule } from './brand/brand.module';
+import { SupplierModule } from './supplier/supplier.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { RolesGuard } from './auth/guards/roles.guard';
     CategoryModule,
     ProductGroupModule,
     ProductImageModule,
+    BrandModule,
+    SupplierModule,
   ],
   controllers: [AppController],
   providers: [
