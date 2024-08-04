@@ -81,6 +81,7 @@ export class CategoryService {
         where: { id: input.id },
         data: {
           ...input,
+          name,
           slug,
         },
       });

@@ -29,6 +29,7 @@ export class ProductCategoryService {
     try {
       const category = await this.prisma.productCategory.findUnique({
         where: { id },
+        include: { products: true },
       });
       if (!category) {
         throw new NotFoundException('product category id not found');
@@ -87,6 +88,7 @@ export class ProductCategoryService {
         where: { id: input.id },
         data: {
           ...input,
+          name,
           slug,
         },
       });

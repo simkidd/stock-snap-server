@@ -35,7 +35,7 @@ export class CategoryController {
     return this.categoryService.getCategoryById(id);
   }
 
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.MANAGER, UserRole.INVENTORY_CONTROLLER)
   @ApiOperation({ summary: 'Create a new category' })
   @ApiResponse({
     status: 201,
