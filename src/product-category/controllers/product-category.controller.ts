@@ -62,7 +62,7 @@ export class ProductCategoryController {
   })
   @ApiResponse({ status: 404, description: 'category not found.' })
   @Delete('/delete/:id')
-  remove(@Param('id') id: string) {
+  deleteCategory(@Param('id') id: string) {
     return this.categoryService.deleteProductCategory(id);
   }
 }
