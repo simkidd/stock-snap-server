@@ -31,6 +31,7 @@ export class ProductController {
   }
 
   // Get a single product by ID
+  @Public()
   @ApiOperation({ summary: 'Get a product by id' })
   @ApiResponse({ status: 200, description: 'Return a product by id.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
