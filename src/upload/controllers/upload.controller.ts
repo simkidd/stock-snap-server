@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Controller,
   Delete,
   Param,
@@ -7,18 +6,16 @@ import {
   Post,
   UploadedFile,
   UploadedFiles,
-  UseInterceptors,
+  UseInterceptors
 } from '@nestjs/common';
-import { UploadService } from '../services/upload.service';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
   ApiOperation,
-  ApiParam,
   ApiResponse,
-  ApiTags,
+  ApiTags
 } from '@nestjs/swagger';
-import { ImageUploadResponse } from '../dtos/image.dto';
+import { UploadService } from '../services/upload.service';
 
 @ApiTags('image upload')
 @Controller('uploads')
