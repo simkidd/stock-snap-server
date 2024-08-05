@@ -17,6 +17,7 @@ import { AuthGuard } from './auth/guards/auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 import { BrandModule } from './brand/brand.module';
 import { SupplierModule } from './supplier/supplier.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { SupplierModule } from './supplier/supplier.module';
     ProductImageModule,
     BrandModule,
     SupplierModule,
+    UploadModule,
   ],
   controllers: [AppController],
   providers: [
