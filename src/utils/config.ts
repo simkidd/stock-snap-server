@@ -11,4 +11,7 @@ export const config = {
   API_PATH: process.env.API_PATH || '/api/v1',
   NODE_ENV: env,
   JWT_SECRET: process.env.JWT_SECRET || 'r78hbi8hyin',
+  CLOUDINARY_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_KEY: process.env.CLOUDINARY_API_KEY,
+  CLOUDINARY_SECRET: process.env.CLOUDINARY_API_SECRET,
 };
