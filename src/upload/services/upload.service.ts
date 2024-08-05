@@ -3,8 +3,8 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from 'src/prisma/prisma.service';
 import * as Cloudinary from 'cloudinary';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { deleteImage, uploadImage } from 'src/utils/cloudinary';
 import {
   CloudinaryUploadResponse,
