@@ -11,7 +11,6 @@ import { OrderModule } from './order/order.module';
 import { AuthModule } from './auth/auth.module';
 import { CategoryModule } from './category/category.module';
 import { ProductGroupModule } from './product-group/product-group.module';
-import { ProductImageModule } from './product-image/product-image.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guards/auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
@@ -30,7 +29,6 @@ import { UploadModule } from './upload/upload.module';
     AuthModule,
     CategoryModule,
     ProductGroupModule,
-    ProductImageModule,
     BrandModule,
     SupplierModule,
     UploadModule,
