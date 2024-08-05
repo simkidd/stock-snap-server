@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Param,
+  Patch,
   Post,
   UploadedFile,
   UploadedFiles,
@@ -88,5 +89,13 @@ export class UploadController {
   ) {
     await this.uploadService.deleteProductImage(productId, imageId);
     return { message: 'Product image deleted successfully' };
+  }
+
+  @Patch('/:productId/images/:imageId/main')
+  async setMainImage(
+    @Param('productId') productId: string,
+    @Param('imageId') imageId: string,
+  ): Promise<void> {
+    await this.uploadService.setMainProductImage(productId, imageId);
   }
 }

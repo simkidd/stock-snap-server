@@ -180,4 +180,19 @@ export class UploadService {
       );
     }
   }
+
+  // Method to set a specific image as the main image for a product
+  async setMainProductImage(productId: string, imageId: string): Promise<void> {
+    // Set all images for the product to not main
+    await this.prismaService.productImage.updateMany({
+      where: { productId },
+      data: { isMain: false },
+    });
+
+    // Set the specified image as the main image
+    await this.prismaService.productImage.update({
+      where: { id: imageId },
+      data: { isMain: true },
+    });
+  }
 }
