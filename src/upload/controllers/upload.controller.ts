@@ -84,7 +84,7 @@ export class UploadController {
   }
 
   @Post('/product/:productId')
-  @UseInterceptors(FilesInterceptor('files', 4)) // Limit to 4 files
+  @UseInterceptors(FilesInterceptor('files')) // Limit to 4 files
   @ApiOperation({ summary: 'Upload multiple product images' })
   @ApiBody({
     description: 'The product image files to upload',
@@ -121,7 +121,7 @@ export class UploadController {
   }
 
   @Post('/product/:productId/update')
-  @UseInterceptors(FilesInterceptor('files', 4)) // Limit to 4 files
+  @UseInterceptors(FilesInterceptor('files')) // Limit to 4 files
   @ApiOperation({ summary: 'Update multiple product images' })
   @ApiBody({
     description: 'The product image files to update',
