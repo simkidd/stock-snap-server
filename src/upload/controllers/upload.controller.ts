@@ -18,16 +18,17 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { ImageUploadResponse } from '../dtos/image.dto';
 
 @ApiTags('image upload')
 @Controller('uploads')
 export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
+  // brand image upload
   @Post('/brand/:brandId')
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload a brand image' })
-  @ApiParam({ name: 'brandId', type: String, description: 'ID of the brand' })
   @ApiBody({
     description: 'The image file to upload',
     type: 'multipart/form-data',
@@ -38,22 +39,14 @@ export class UploadController {
     description: 'Brand image uploaded successfully',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  async uploadBrandImage(
+  uploadBrandImage(
     @UploadedFile() file: Express.Multer.File,
     @Param('brandId') brandId: string,
   ) {
-    if (!file) {
-      throw new BadRequestException('File is required');
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      throw new BadRequestException('File size exceeds the 2MB limit');
-    }
-
-    await this.uploadService.uploadBrandImage(file, brandId);
-    return { message: 'Brand image uploaded successfully' };
+    return this.uploadService.uploadBrandImage(file, brandId);
   }
 
+  // upload user profile image
   @Post('/user/:userId')
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload a user avatar' })
@@ -67,24 +60,16 @@ export class UploadController {
     description: 'User avatar uploaded successfully',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  async uploadUserAvatar(
+  uploadUserAvatar(
     @UploadedFile() file: Express.Multer.File,
     @Param('userId') userId: string,
   ) {
-    if (!file) {
-      throw new BadRequestException('File is required');
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      throw new BadRequestException('File size exceeds the 2MB limit');
-    }
-
-    await this.uploadService.uploadUserAvatar(file, userId);
-    return { message: 'User avatar uploaded successfully' };
+    return this.uploadService.uploadUserAvatar(file, userId);
   }
 
-  @Post('/product/:productId')
-  @UseInterceptors(FilesInterceptor('files')) // Limit to 4 files
+  // upload product images
+  @Post('/product/add/:productId')
+  @UseInterceptors(FilesInterceptor('files'))
   @ApiOperation({ summary: 'Upload multiple product images' })
   @ApiBody({
     description: 'The product image files to upload',
@@ -97,31 +82,16 @@ export class UploadController {
     description: 'Product images uploaded successfully',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  async uploadProductImages(
+  uploadProductImages(
     @UploadedFiles() files: Express.Multer.File[],
     @Param('productId') productId: string,
   ) {
-    if (!files || files.length === 0) {
-      throw new BadRequestException('Files are required');
-    }
-
-    if (files.length > 4) {
-      throw new BadRequestException(
-        'Cannot upload more than 4 images at a time',
-      );
-    }
-    for (const file of files) {
-      if (file.size > 2 * 1024 * 1024) {
-        throw new BadRequestException('File size exceeds the 2MB limit');
-      }
-    }
-
-    await this.uploadService.uploadProductImages(files, productId);
-    return { message: 'Product images uploaded successfully' };
+    return this.uploadService.uploadProductImages(files, productId);
   }
 
-  @Post('/product/:productId/update')
-  @UseInterceptors(FilesInterceptor('files')) // Limit to 4 files
+  // update product images
+  @Post('/product/update/:productId')
+  @UseInterceptors(FilesInterceptor('files')) 
   @ApiOperation({ summary: 'Update multiple product images' })
   @ApiBody({
     description: 'The product image files to update',
@@ -134,46 +104,32 @@ export class UploadController {
     description: 'Product images updated successfully',
   })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  async updateProductImages(
+  updateProductImages(
     @UploadedFiles() files: Express.Multer.File[],
     @Param('productId') productId: string,
   ) {
-    if (!files || files.length === 0) {
-      throw new BadRequestException('Files are required');
-    }
-
-    if (files.length > 4) {
-      throw new BadRequestException(
-        'Cannot upload more than 4 images at a time',
-      );
-    }
-    for (const file of files) {
-      if (file.size > 2 * 1024 * 1024) {
-        throw new BadRequestException('File size exceeds the 2MB limit');
-      }
-    }
-    await this.uploadService.updateProductImages(files, productId);
-    return { message: 'Product images updated successfully' };
+    return this.uploadService.updateProductImages(files, productId);
   }
 
+  // delete brand image
   @Delete('/brand/:brandId')
   @ApiOperation({ summary: 'Delete a brand image' })
   @ApiResponse({ status: 200, description: 'Brand image deleted successfully' })
   @ApiResponse({ status: 404, description: 'Brand not found' })
-  async deleteBrandImage(@Param('brandId') brandId: string) {
-    await this.uploadService.deleteBrandImage(brandId);
-    return { message: 'Brand image deleted successfully' };
+  deleteBrandImage(@Param('brandId') brandId: string) {
+    return this.uploadService.deleteBrandImage(brandId);
   }
 
+  // delete user image
   @Delete('/user/:userId')
   @ApiOperation({ summary: 'Delete a user avatar' })
   @ApiResponse({ status: 200, description: 'User avatar deleted successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async deleteUserAvatar(@Param('userId') userId: string) {
-    await this.uploadService.deleteUserAvatar(userId);
-    return { message: 'User avatar deleted successfully' };
+  deleteUserAvatar(@Param('userId') userId: string) {
+    return this.uploadService.deleteUserAvatar(userId);
   }
 
+  // delete product image
   @Delete('/product/:productId/:imageId')
   @ApiOperation({ summary: 'Delete a product image' })
   @ApiResponse({
@@ -181,25 +137,25 @@ export class UploadController {
     description: 'Product image deleted successfully',
   })
   @ApiResponse({ status: 404, description: 'Product or image not found' })
-  async deleteProductImage(
+  deleteProductImage(
     @Param('productId') productId: string,
     @Param('imageId') imageId: string,
   ) {
-    await this.uploadService.deleteProductImage(productId, imageId);
-    return { message: 'Product image deleted successfully' };
+    return this.uploadService.deleteProductImage(productId, imageId);
   }
 
-  @Patch('/:productId/images/:imageId/main')
+  // select main product image
+  @Patch('/product/:productId/images/:imageId/main')
   @ApiOperation({ summary: 'Set a product image as the main image' })
   @ApiResponse({
     status: 200,
     description: 'Main product image set successfully',
   })
   @ApiResponse({ status: 404, description: 'Product or image not found' })
-  async setMainImage(
+  setMainImage(
     @Param('productId') productId: string,
     @Param('imageId') imageId: string,
-  ): Promise<void> {
-    await this.uploadService.setMainProductImage(productId, imageId);
+  ) {
+    return this.uploadService.setMainProductImage(productId, imageId);
   }
 }
