@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { deleteImage, uploadImage } from 'src/utils/cloundinary';
 import * as Cloudinary from 'cloudinary';
+import { deleteImage, uploadImage } from 'src/utils/cloudinary';
 
 @Injectable()
 export class UploadService {
@@ -12,7 +12,7 @@ export class UploadService {
     options: Cloudinary.UploadApiOptions,
   ): Promise<{ publicId: string; imageUrl: string }> {
     try {
-      const result = await uploadImage(file.path, options);
+      const result = await uploadImage(file, options);
       return {
         publicId: result.public_id,
         imageUrl: result.secure_url,
@@ -35,11 +35,11 @@ export class UploadService {
     brandId: string,
   ): Promise<void> {
     const { publicId, imageUrl } = await this.upload(file, {
-      folder: 'brands',
+      folder: 'stock_snap/brands',
       transformation: [
-        { width: 300, height: 300, crop: 'limit' },
+        { width: 500, height: 500, crop: 'limit' },
         { quality: 'auto' },
-        { format: 'jpg' },
+        { format: 'auto' },
       ],
     });
 
@@ -54,11 +54,11 @@ export class UploadService {
     userId: string,
   ): Promise<void> {
     const { publicId, imageUrl } = await this.upload(file, {
-      folder: 'avatars',
+      folder: 'stock_snap/avatars',
       transformation: [
-        { width: 150, height: 150, crop: 'thumb', gravity: 'face' },
+        { width: 500, height: 500, crop: 'thumb', gravity: 'face' },
         { quality: 'auto' },
-        { format: 'jpg' },
+        { format: 'auto' },
       ],
     });
 
@@ -72,17 +72,28 @@ export class UploadService {
     files: Express.Multer.File[],
     productId: string,
   ): Promise<void> {
+    // Check the number of files to be uploaded
     if (files.length > 4) {
-      throw new Error('Cannot upload more than 4 images.');
+      throw new Error('Cannot upload more than 4 images at a time.');
+    }
+
+    // Get the current number of images for the product
+    const existingImagesCount = await this.prismaService.productImage.count({
+      where: { productId },
+    });
+
+    // Check if the total number of images exceeds the limit
+    if (existingImagesCount + files.length > 6) {
+      throw new Error('Total number of images cannot exceed 6.');
     }
 
     const imageUploadPromises = files.map((file) =>
       this.upload(file, {
-        folder: 'products',
+        folder: 'stock_snap/products',
         transformation: [
           { width: 500, height: 500, crop: 'limit' },
           { quality: 'auto' },
-          { format: 'jpg' },
+          { format: 'auto' },
         ],
       }),
     );
@@ -107,11 +118,11 @@ export class UploadService {
   ): Promise<void> {
     const imageUploadPromises = files.map((file) =>
       this.upload(file, {
-        folder: 'products',
+        folder: 'stock_snap/products',
         transformation: [
           { width: 500, height: 500, crop: 'limit' },
           { quality: 'auto' },
-          { format: 'jpg' },
+          { format: 'auto' },
         ],
       }),
     );
@@ -130,6 +141,7 @@ export class UploadService {
       where: { id: productId },
       data: {
         images: {
+          deleteMany: {},
           create: images.map((img) => ({
             publicId: img.publicId,
             imageUrl: img.imageUrl,
@@ -166,18 +178,38 @@ export class UploadService {
   }
 
   async deleteProductImage(productId: string, imageId: string): Promise<void> {
+    // Step 1: Fetch the product image record
     const productImage = await this.prismaService.productImage.findUnique({
-      where: { id: imageId, productId },
+      where: { id: imageId },
     });
-    if (productImage) {
+
+    if (!productImage) {
+      throw new NotFoundException('Product image not found.');
+    }
+
+    // Check if the image exists and belongs to the correct product
+    if (!productImage || productImage.productId !== productId) {
+      throw new NotFoundException(
+        'Product image not found or does not belong to the specified product.',
+      );
+    }
+
+    // Step 2: Delete from Cloudinary
+    try {
       await this.delete(productImage.publicId);
+    } catch (error) {
+      console.error('Error deleting image from Cloudinary:', error);
+      throw new Error('Failed to delete image from Cloudinary');
+    }
+
+    // Step 3: Delete from Prisma
+    try {
       await this.prismaService.productImage.delete({
         where: { id: imageId },
       });
-    } else {
-      throw new NotFoundException(
-        'Image not found or does not belong to the specified product.',
-      );
+    } catch (error) {
+      console.error('Error deleting image from Prisma:', error);
+      throw new Error('Failed to delete image from Prisma');
     }
   }
 

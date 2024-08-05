@@ -1,9 +1,5 @@
 import * as Cloudinary from 'cloudinary';
 import { config } from './config';
-import * as fs from 'fs';
-import * as util from 'util';
-
-const unlinkFile = util.promisify(fs.unlink);
 
 export const cloudinary = Cloudinary.v2;
 
@@ -16,13 +12,20 @@ const options: Cloudinary.ConfigOptions = {
 cloudinary.config(options);
 
 // Function to upload an image
-export const uploadImage = async (
-  filePath: string,
+export const uploadImage = (
+  file: Express.Multer.File,
   options?: Cloudinary.UploadApiOptions,
 ): Promise<Cloudinary.UploadApiResponse> => {
-  const result = await cloudinary.uploader.upload(filePath, options);
-  await unlinkFile(filePath); // Clean up the uploaded file
-  return result;
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      options,
+      (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      },
+    );
+    uploadStream.end(file.buffer);
+  });
 };
 
 // Function to delete an image
