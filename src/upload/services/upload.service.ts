@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import * as Cloudinary from 'cloudinary';
 import { deleteImage, uploadImage } from 'src/utils/cloudinary';
@@ -74,7 +78,9 @@ export class UploadService {
   ): Promise<void> {
     // Check the number of files to be uploaded
     if (files.length > 4) {
-      throw new Error('Cannot upload more than 4 images at a time.');
+      throw new BadRequestException(
+        'Cannot upload more than 4 images at a time.',
+      );
     }
 
     // Get the current number of images for the product
@@ -84,7 +90,7 @@ export class UploadService {
 
     // Check if the total number of images exceeds the limit
     if (existingImagesCount + files.length > 6) {
-      throw new Error('Total number of images cannot exceed 6.');
+      throw new BadRequestException('Total number of images cannot exceed 6.');
     }
 
     const imageUploadPromises = files.map((file) =>
@@ -116,6 +122,12 @@ export class UploadService {
     files: Express.Multer.File[],
     productId: string,
   ): Promise<void> {
+    if (files.length > 4) {
+      throw new BadRequestException(
+        'Cannot upload more than 4 images at a time.',
+      );
+    }
+
     const imageUploadPromises = files.map((file) =>
       this.upload(file, {
         folder: 'stock_snap/products',
@@ -155,6 +167,10 @@ export class UploadService {
     const brand = await this.prismaService.brand.findUnique({
       where: { id: brandId },
     });
+    if (!brand) {
+      throw new NotFoundException('Brand image not found');
+    }
+
     if (brand && brand.publicId) {
       await this.delete(brand.publicId);
       await this.prismaService.brand.update({
@@ -168,6 +184,11 @@ export class UploadService {
     const user = await this.prismaService.user.findUnique({
       where: { id: userId },
     });
+
+    if (!user) {
+      throw new NotFoundException('User avatar not found');
+    }
+
     if (user && user.avatarId) {
       await this.delete(user.avatarId);
       await this.prismaService.user.update({
@@ -178,53 +199,46 @@ export class UploadService {
   }
 
   async deleteProductImage(productId: string, imageId: string): Promise<void> {
-    // Step 1: Fetch the product image record
-    const productImage = await this.prismaService.productImage.findUnique({
-      where: { id: imageId },
-    });
-
-    if (!productImage) {
-      throw new NotFoundException('Product image not found.');
-    }
-
-    // Check if the image exists and belongs to the correct product
-    if (!productImage || productImage.productId !== productId) {
-      throw new NotFoundException(
-        'Product image not found or does not belong to the specified product.',
-      );
-    }
-
-    // Step 2: Delete from Cloudinary
     try {
+      // Check if the product image exists
+      const productImage = await this.prismaService.productImage.findUnique({
+        where: { id: imageId },
+      });
+
+      if (!productImage) {
+        throw new BadRequestException('Product image not found');
+      }
+
+      // Delete from Cloudinary
       await this.delete(productImage.publicId);
-    } catch (error) {
-      console.error('Error deleting image from Cloudinary:', error);
-      throw new Error('Failed to delete image from Cloudinary');
-    }
 
-    // Step 3: Delete from Prisma
-    try {
+      // Delete from Prisma
       await this.prismaService.productImage.delete({
         where: { id: imageId },
       });
     } catch (error) {
-      console.error('Error deleting image from Prisma:', error);
-      throw new Error('Failed to delete image from Prisma');
+      console.error('Error deleting image:', error);
+      throw new BadRequestException('Failed to delete product image');
     }
   }
 
   // Method to set a specific image as the main image for a product
   async setMainProductImage(productId: string, imageId: string): Promise<void> {
-    // Set all images for the product to not main
-    await this.prismaService.productImage.updateMany({
-      where: { productId },
-      data: { isMain: false },
-    });
+    try {
+      // Set all images for the product to not main
+      await this.prismaService.productImage.updateMany({
+        where: { productId },
+        data: { isMain: false },
+      });
 
-    // Set the specified image as the main image
-    await this.prismaService.productImage.update({
-      where: { id: imageId },
-      data: { isMain: true },
-    });
+      // Set the specified image as the main image
+      await this.prismaService.productImage.update({
+        where: { id: imageId },
+        data: { isMain: true },
+      });
+    } catch (error) {
+      console.error('Error setting main image:', error);
+      throw new BadRequestException('Failed to set main product image');
+    }
   }
 }

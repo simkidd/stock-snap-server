@@ -45,6 +45,11 @@ export class UploadController {
     if (!file) {
       throw new BadRequestException('File is required');
     }
+
+    if (file.size > 2 * 1024 * 1024) {
+      throw new BadRequestException('File size exceeds the 2MB limit');
+    }
+
     await this.uploadService.uploadBrandImage(file, brandId);
     return { message: 'Brand image uploaded successfully' };
   }
@@ -68,6 +73,10 @@ export class UploadController {
   ) {
     if (!file) {
       throw new BadRequestException('File is required');
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      throw new BadRequestException('File size exceeds the 2MB limit');
     }
 
     await this.uploadService.uploadUserAvatar(file, userId);
@@ -95,6 +104,18 @@ export class UploadController {
     if (!files || files.length === 0) {
       throw new BadRequestException('Files are required');
     }
+
+    if (files.length > 4) {
+      throw new BadRequestException(
+        'Cannot upload more than 4 images at a time',
+      );
+    }
+    for (const file of files) {
+      if (file.size > 2 * 1024 * 1024) {
+        throw new BadRequestException('File size exceeds the 2MB limit');
+      }
+    }
+
     await this.uploadService.uploadProductImages(files, productId);
     return { message: 'Product images uploaded successfully' };
   }
@@ -119,6 +140,17 @@ export class UploadController {
   ) {
     if (!files || files.length === 0) {
       throw new BadRequestException('Files are required');
+    }
+
+    if (files.length > 4) {
+      throw new BadRequestException(
+        'Cannot upload more than 4 images at a time',
+      );
+    }
+    for (const file of files) {
+      if (file.size > 2 * 1024 * 1024) {
+        throw new BadRequestException('File size exceeds the 2MB limit');
+      }
     }
     await this.uploadService.updateProductImages(files, productId);
     return { message: 'Product images updated successfully' };
