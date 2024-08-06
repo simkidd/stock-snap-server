@@ -13,7 +13,7 @@ import {
 
 @Injectable()
 export class UploadService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   private async upload(
     file: Express.Multer.File,
@@ -51,7 +51,7 @@ export class UploadService {
         throw new BadRequestException('File size exceeds the 2MB limit');
       }
 
-      const brand = await this.prismaService.brand.findUnique({
+      const brand = await this.prisma.brand.findUnique({
         where: { id: brandId },
       });
       if (!brand) {
@@ -71,7 +71,7 @@ export class UploadService {
         ],
       });
 
-      await this.prismaService.brand.update({
+      await this.prisma.brand.update({
         where: { id: brandId },
         data: { imageUrl, publicId },
       });
@@ -95,7 +95,7 @@ export class UploadService {
         throw new BadRequestException('File size exceeds the 2MB limit');
       }
 
-      const user = await this.prismaService.user.findUnique({
+      const user = await this.prisma.user.findUnique({
         where: { id: userId },
       });
 
@@ -117,7 +117,7 @@ export class UploadService {
         ],
       });
 
-      await this.prismaService.user.update({
+      await this.prisma.user.update({
         where: { id: userId },
         data: { avatar: imageUrl, avatarId: publicId },
       });
@@ -149,7 +149,7 @@ export class UploadService {
         }
       }
 
-      const product = await this.prismaService.product.findUnique({
+      const product = await this.prisma.product.findUnique({
         where: { id: productId },
       });
       if (!product) {
@@ -157,7 +157,7 @@ export class UploadService {
       }
 
       // Get the current number of images for the product
-      const existingImagesCount = await this.prismaService.productImage.count({
+      const existingImagesCount = await this.prisma.productImage.count({
         where: { productId: product.id },
       });
 
@@ -180,7 +180,7 @@ export class UploadService {
       );
       const images = await Promise.all(imageUploadPromises);
 
-      await this.prismaService.product.update({
+      await this.prisma.product.update({
         where: { id: productId },
         data: {
           images: {
@@ -232,7 +232,7 @@ export class UploadService {
       const images = await Promise.all(imageUploadPromises);
 
       // Get existing images
-      const existingImages = await this.prismaService.productImage.findMany({
+      const existingImages = await this.prisma.productImage.findMany({
         where: { productId },
       });
 
@@ -243,7 +243,7 @@ export class UploadService {
       await Promise.all(deleteImagePromises);
 
       // Update database with new images
-      await this.prismaService.product.update({
+      await this.prisma.product.update({
         where: { id: productId },
         data: {
           images: {
@@ -264,7 +264,7 @@ export class UploadService {
 
   async deleteBrandImage(brandId: string): Promise<ImageUploadResponse> {
     try {
-      const brand = await this.prismaService.brand.findUnique({
+      const brand = await this.prisma.brand.findUnique({
         where: { id: brandId },
       });
       if (!brand) {
@@ -272,7 +272,7 @@ export class UploadService {
       }
 
       await this.delete(brand.publicId);
-      await this.prismaService.brand.update({
+      await this.prisma.brand.update({
         where: { id: brandId },
         data: { imageUrl: null, publicId: null },
       });
@@ -285,7 +285,7 @@ export class UploadService {
 
   async deleteUserAvatar(userId: string): Promise<ImageUploadResponse> {
     try {
-      const user = await this.prismaService.user.findUnique({
+      const user = await this.prisma.user.findUnique({
         where: { id: userId },
       });
 
@@ -294,7 +294,7 @@ export class UploadService {
       }
 
       await this.delete(user.avatarId);
-      await this.prismaService.user.update({
+      await this.prisma.user.update({
         where: { id: userId },
         data: { avatar: null, avatarId: null },
       });
@@ -310,14 +310,14 @@ export class UploadService {
     imageId: string,
   ): Promise<ImageUploadResponse> {
     try {
-      const product = await this.prismaService.product.findUnique({
+      const product = await this.prisma.product.findUnique({
         where: { id: productId },
       });
       if (!product) {
         throw new NotFoundException('Product not found');
       }
 
-      const productImage = await this.prismaService.productImage.findUnique({
+      const productImage = await this.prisma.productImage.findUnique({
         where: { id: imageId },
       });
 
@@ -327,7 +327,7 @@ export class UploadService {
 
       await this.delete(productImage.publicId);
 
-      await this.prismaService.productImage.delete({
+      await this.prisma.productImage.delete({
         where: { id: imageId },
       });
 
@@ -344,13 +344,13 @@ export class UploadService {
   ): Promise<ImageUploadResponse> {
     try {
       // Set all images for the product to not main
-      await this.prismaService.productImage.updateMany({
+      await this.prisma.productImage.updateMany({
         where: { productId },
         data: { isMain: false },
       });
 
       // Set the specified image as the main image
-      await this.prismaService.productImage.update({
+      await this.prisma.productImage.update({
         where: { id: imageId },
         data: { isMain: true },
       });
