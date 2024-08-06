@@ -62,7 +62,7 @@ export class ProductController {
     description: 'The product has been successfully updated.',
   })
   @ApiResponse({ status: 404, description: 'Product not found.' })
-  @Put('/update/:id')
+  @Put('/update')
   updateProduct(
     @Body() input: UpdateProductInput,
     @Req() req: Request,

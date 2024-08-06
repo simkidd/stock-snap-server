@@ -229,7 +229,6 @@ model OrderProduct {
 enum ProductStatusEnum {
   AVAILABLE
   OUT
-  REORDER
   LOW
 }
 

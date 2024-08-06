@@ -99,7 +99,7 @@ export class SalesService {
       });
 
       // Update product quantity and quantity sold
-      await this.prisma.product.update({
+      const updatedProduct = await this.prisma.product.update({
         where: { id: input.productId },
         data: {
           quantity: {
@@ -108,6 +108,21 @@ export class SalesService {
           quantitySold: {
             increment: input.quantity,
           },
+        },
+      });
+
+      // Update product status based on remaining quantity
+      let newStatus = updatedProduct.status;
+      if (updatedProduct.quantity === 0) {
+        newStatus = 'OUT';
+      } else if (updatedProduct.quantity < updatedProduct.minimumQuantity) {
+        newStatus = 'LOW';
+      }
+
+      await this.prisma.product.update({
+        where: { id: input.productId },
+        data: {
+          status: newStatus,
         },
       });
 

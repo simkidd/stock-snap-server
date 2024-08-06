@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProductInput, UpdateProductInput } from '../dtos/product.dto';
-import { Product, User } from '@prisma/client';
+import { Product, ProductStatusEnum, User } from '@prisma/client';
 import { slugify } from 'src/utils/helpers';
 
 @Injectable()
@@ -87,6 +87,14 @@ export class ProductService {
 
       const slug = slugify(name);
 
+      // Calculate new status based on quantity
+      let newStatus = existingProduct.status;
+      if (input.quantity === 0) {
+        newStatus = ProductStatusEnum.OUT;
+      } else if (input.quantity < existingProduct.minimumQuantity) {
+        newStatus = ProductStatusEnum.LOW;
+      }
+
       const product = await this.prisma.product.update({
         where: { id: input.id },
         data: {
@@ -94,6 +102,7 @@ export class ProductService {
           name,
           slug,
           updatedById: userId,
+          status: newStatus,
         },
       });
 
