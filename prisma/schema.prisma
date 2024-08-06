@@ -28,7 +28,7 @@ model Product {
   description       String
   price             Decimal
   quantity          Int
-  quantitySold      Int?
+  quantitySold      Int?              @default(0)
   minimumQuantity   Int
   productCategoryId String
   productCategory   ProductCategory   @relation(fields: [productCategoryId], references: [id])
@@ -124,9 +124,9 @@ model Sales {
   cashierId     String
   cashier       User      @relation(fields: [cashierId], references: [id])
   productId     String
-  invoiceNo     String
-  note          String
-  posNumber     String
+  invoiceNo     String    @unique
+  note          String?
+  posNumber     String?
   product       Product   @relation(fields: [productId], references: [id])
   paymentMethod String    @default("Cash")
   createdAt     DateTime  @default(now())

@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { ProductService } from '../services/product.service';
 import { CreateProductInput, UpdateProductInput } from '../dtos/product.dto';
-import { Product, UserRole } from '@prisma/client';
+import { Product, User, UserRole } from '@prisma/client';
 import { Request } from 'express';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/auth/decorators/public.decorator';
@@ -50,7 +50,7 @@ export class ProductController {
   @ApiResponse({ status: 400, description: 'Bad request.' })
   @Post('/create')
   createProduct(@Body() input: CreateProductInput, @Req() req: Request) {
-    const user = req['user'];
+    const user = req['user'] as User;
     return this.productService.createProduct(input, user.id);
   }
 
@@ -67,7 +67,7 @@ export class ProductController {
     @Body() input: UpdateProductInput,
     @Req() req: Request,
   ): Promise<Product> {
-    const user = req['user'];
+    const user = req['user'] as User;
     return this.productService.updateProduct(input, user.id);
   }
 
