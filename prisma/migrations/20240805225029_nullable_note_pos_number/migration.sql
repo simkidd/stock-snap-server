@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "sales" ALTER COLUMN "note" DROP NOT NULL,
+ALTER COLUMN "posNumber" DROP NOT NULL;
