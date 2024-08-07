@@ -39,10 +39,10 @@ export class NotificationService {
     }
   }
 
-  async createNotification(message: string) {
+  async createNotification(message: string, productId: string) {
     try {
       await this.prisma.notification.create({
-        data: { message },
+        data: { message, productId },
       });
     } catch (error) {
       throw error;
