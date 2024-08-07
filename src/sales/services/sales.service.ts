@@ -8,10 +8,14 @@ import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSaleInput } from '../dtos/sales.dto';
 import { generateInvoiceNo } from 'src/utils/helpers';
+import { NotificationService } from 'src/notification/services/notification.service';
 
 @Injectable()
 export class SalesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   async getAllSales(): Promise<Sales[]> {
     try {
@@ -115,8 +119,14 @@ export class SalesService {
       let newStatus = updatedProduct.status;
       if (updatedProduct.quantity === 0) {
         newStatus = 'OUT';
+        await this.notificationService.createNotification(
+          `Product ${product.name} is out of stock.`,
+        );
       } else if (updatedProduct.quantity < updatedProduct.minimumQuantity) {
         newStatus = 'LOW';
+        await this.notificationService.createNotification(
+          `Product ${product.name} is running low on stock.`,
+        );
       }
 
       await this.prisma.product.update({
