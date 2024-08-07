@@ -33,7 +33,7 @@ export class SalesService {
         include: {
           saleItems: true,
           cashier: {
-            select: { name: true },
+            select: { id: true, name: true },
           },
           discount: true,
         },
@@ -115,9 +115,10 @@ export class SalesService {
 
       // Apply discount if available
       let discountAmount = new Decimal(0);
-      if (input.discountId) {
+      let discountId = null;
+      if (input.discountCode) {
         const discount = await this.prisma.discount.findUnique({
-          where: { id: input.discountId },
+          where: { code: input.discountCode },
         });
         if (!discount) {
           throw new NotFoundException('Discount not found');
@@ -138,6 +139,7 @@ export class SalesService {
         const discountPercentage = new Decimal(discount.percentage).div(100);
         discountAmount = grossTotal.mul(discountPercentage);
         grossTotal = grossTotal.sub(discountAmount);
+        discountId = discount.id;
       }
 
       // Create the sale record
@@ -147,7 +149,7 @@ export class SalesService {
           totalAmount: grossTotal,
           grossTotal: grossTotal.add(discountAmount),
           cashierId: userId,
-          discountId: input.discountId,
+          discountId,
           paymentMethod: input.paymentMethod,
           saleItems: {
             create: saleItemsData,

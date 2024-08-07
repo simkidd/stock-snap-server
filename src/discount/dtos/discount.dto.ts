@@ -1,11 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsNumber,
-  Min,
-  Max,
-  IsNotEmpty,
   IsDateString,
-  IsDate,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min
 } from 'class-validator';
 
 export class CreateDiscountInput {
@@ -22,7 +23,7 @@ export class CreateDiscountInput {
     description: 'The start date of the discount',
     example: '2024-01-01T00:00:00.000Z',
   })
-  @IsDate()
+  @IsDateString()
   @IsNotEmpty()
   startDate: Date;
 
@@ -30,7 +31,11 @@ export class CreateDiscountInput {
     description: 'The end date of the discount',
     example: '2024-12-31T23:59:59.000Z',
   })
-  @IsDate()
+  @IsDateString()
   @IsNotEmpty()
   endDate: Date;
+
+  @IsOptional()
+  @IsString()
+  description: string
 }

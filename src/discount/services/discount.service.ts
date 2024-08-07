@@ -8,6 +8,15 @@ import { generateRandomCode } from 'src/utils/helpers';
 export class DiscountService {
   constructor(private readonly prisma: PrismaService) {}
 
+  async getDiscounts(): Promise<Discount[]> {
+    try {
+      const discounts = await this.prisma.discount.findMany();
+      return discounts;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async createDiscount(input: CreateDiscountInput): Promise<Discount> {
     // Validate that startDate is before endDate
     if (input.startDate >= input.endDate) {

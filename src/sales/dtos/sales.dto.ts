@@ -45,12 +45,10 @@ export class CreateSaleInput {
   @IsString()
   paymentMethod: string;
 
-  @ApiProperty({
-    description: 'ID of the discount applied to the sale, if any',
-  })
+  @ApiProperty({ description: 'Discount code', required: false })
   @IsOptional()
   @IsString()
-  discountId?: string;
+  discountCode?: string;
 
   @ApiProperty({ description: 'Additional notes for the sale' })
   @IsOptional()
