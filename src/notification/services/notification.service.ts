@@ -38,4 +38,14 @@ export class NotificationService {
       throw error;
     }
   }
+
+  async createNotification(message: string) {
+    try {
+      await this.prisma.notification.create({
+        data: { message },
+      });
+    } catch (error) {
+      throw error;
+    }
+  }
 }
