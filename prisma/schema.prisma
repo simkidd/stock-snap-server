@@ -48,6 +48,7 @@ model Product {
   brandId           String?
   productGroup      ProductGroup?     @relation(fields: [productGroupId], references: [id])
   productGroupId    String?
+  notification      Notification[]
 
   @@map("products")
 }
@@ -224,6 +225,18 @@ model OrderProduct {
   product   Product  @relation(fields: [productId], references: [id])
 
   @@map("order_products")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  message   String
+  read      Boolean  @default(false)
+  product   Product? @relation(fields: [productId], references: [id])
+  productId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("notifications")
 }
 
 enum ProductStatusEnum {

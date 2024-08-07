@@ -3,14 +3,18 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Product } from '@prisma/client';
+import { NotificationService } from 'src/notification/services/notification.service';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateProductInput, UpdateProductInput } from '../dtos/product.dto';
-import { Product, ProductStatusEnum, User } from '@prisma/client';
 import { slugify } from 'src/utils/helpers';
+import { CreateProductInput, UpdateProductInput } from '../dtos/product.dto';
 
 @Injectable()
 export class ProductService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
+  ) {}
 
   async getAllProducts(): Promise<Product[]> {
     try {
@@ -87,14 +91,6 @@ export class ProductService {
 
       const slug = slugify(name);
 
-      // Calculate new status based on quantity
-      let newStatus = existingProduct.status;
-      if (input.quantity === 0) {
-        newStatus = ProductStatusEnum.OUT;
-      } else if (input.quantity < existingProduct.minimumQuantity) {
-        newStatus = ProductStatusEnum.LOW;
-      }
-
       const product = await this.prisma.product.update({
         where: { id: input.id },
         data: {
@@ -102,9 +98,10 @@ export class ProductService {
           name,
           slug,
           updatedById: userId,
-          status: newStatus,
         },
       });
+
+      await this.updateProductStatus(product);
 
       return product;
     } catch (error) {
@@ -128,6 +125,40 @@ export class ProductService {
       return product;
     } catch (error) {
       throw error;
+    }
+  }
+
+  private async updateProductStatus(product: Product) {
+    if (product.quantity === 0 && product.status !== 'OUT') {
+      await this.prisma.product.update({
+        where: { id: product.id },
+        data: { status: 'OUT' },
+      });
+      await this.notificationService.createNotification(
+        `Product ${product.name} is out of stock.`,
+      );
+    } else if (
+      product.quantity < product.minimumQuantity &&
+      product.status !== 'LOW'
+    ) {
+      await this.prisma.product.update({
+        where: { id: product.id },
+        data: { status: 'LOW' },
+      });
+      await this.notificationService.createNotification(
+        `Product ${product.name} is running low on stock.`,
+      );
+    } else if (
+      product.quantity > product.minimumQuantity &&
+      (product.status === 'LOW' || product.status === 'OUT')
+    ) {
+      await this.prisma.product.update({
+        where: { id: product.id },
+        data: { status: 'AVAILABLE' },
+      });
+      await this.notificationService.createNotification(
+        `Product ${product.name} is back in stock and available.`,
+      );
     }
   }
 }
