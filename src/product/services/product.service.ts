@@ -136,6 +136,7 @@ export class ProductService {
       });
       await this.notificationService.createNotification(
         `Product ${product.name} is out of stock.`,
+        product.id,
       );
     } else if (
       product.quantity < product.minimumQuantity &&
@@ -147,6 +148,7 @@ export class ProductService {
       });
       await this.notificationService.createNotification(
         `Product ${product.name} is running low on stock.`,
+        product.id,
       );
     } else if (
       product.quantity > product.minimumQuantity &&
@@ -158,6 +160,7 @@ export class ProductService {
       });
       await this.notificationService.createNotification(
         `Product ${product.name} is back in stock and available.`,
+        product.id,
       );
     }
   }
