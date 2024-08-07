@@ -40,7 +40,6 @@ model Product {
   updatedBy         User?             @relation("updatedBy", fields: [updatedById], references: [id])
   status            ProductStatusEnum @default(AVAILABLE)
   images            ProductImage[]
-  sales             Sales[]
   Supplier          Supplier?         @relation(fields: [supplierId], references: [id])
   supplierId        String?
   orderProducts     OrderProduct[]
@@ -48,7 +47,8 @@ model Product {
   brandId           String?
   productGroup      ProductGroup?     @relation(fields: [productGroupId], references: [id])
   productGroupId    String?
-  notification      Notification[]
+  notifications     Notification[]
+  saleItems         SaleItem[]
 
   @@map("products")
 }
@@ -118,24 +118,36 @@ model ProductImage {
 }
 
 model Sales {
-  id            String    @id @default(cuid())
-  unitPrice     Decimal
-  totalAmount   Decimal
-  quantity      Int
+  id            String     @id @default(cuid())
+  invoiceNo     String     @unique
   cashierId     String
-  cashier       User      @relation(fields: [cashierId], references: [id])
-  productId     String
-  invoiceNo     String    @unique
+  totalAmount   Decimal    @default(0)
+  grossTotal    Decimal    @default(0)
+  paymentMethod String     @default("Cash")
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  discountId    String?
+  discount      Discount?  @relation(fields: [discountId], references: [id])
+  cashier       User       @relation(fields: [cashierId], references: [id])
+  saleItems     SaleItem[]
   note          String?
   posNumber     String?
-  product       Product   @relation(fields: [productId], references: [id])
-  paymentMethod String    @default("Cash")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  discount      Discount? @relation(fields: [discountId], references: [id])
-  discountId    String?
 
   @@map("sales")
+}
+
+model SaleItem {
+  id          String  @id @default(cuid())
+  saleId      String
+  productId   String
+  quantity    Int
+  unitPrice   Decimal
+  totalAmount Decimal // Total amount for this item
+  description String
+  sale        Sales   @relation(fields: [saleId], references: [id])
+  product     Product @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
 }
 
 model User {
@@ -177,6 +189,8 @@ model Discount {
   code        String   @unique
   description String?
   percentage  Float    @default(0.0)
+  startDate   DateTime
+  endDate     DateTime
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   sales       Sales[]
