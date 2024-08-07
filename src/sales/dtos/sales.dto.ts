@@ -1,7 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
-export class CreateSaleInput {
+class SaleItemInput {
   @ApiProperty({ description: 'ID of the product being sold' })
   @IsNotEmpty()
   @IsString()
@@ -12,17 +18,37 @@ export class CreateSaleInput {
   @IsInt()
   quantity: number;
 
+  @ApiProperty({ description: 'Unit price of the product' })
+  @IsNotEmpty()
+  @IsString()
+  unitPrice: string; // Using string to accommodate Decimal type conversion
+
+  @ApiProperty({ description: 'Total amount for this sale item' })
+  @IsNotEmpty()
+  @IsString()
+  totalAmount: string; // Using string to accommodate Decimal type conversion
+
+  @ApiProperty({ description: 'Description of the product' })
+  @IsOptional()
+  @IsString()
+  description?: string;
+}
+
+export class CreateSaleInput {
+  @ApiProperty({ description: 'List of items in the sale' })
+  @IsNotEmpty()
+  @IsArray()
+  items: SaleItemInput[];
+
   @ApiProperty({ description: 'Payment method used for the sale' })
   @IsNotEmpty()
   @IsString()
   paymentMethod: string;
 
-  @ApiProperty({
-    description: 'ID of the discount applied to the sale, if any',
-  })
+  @ApiProperty({ description: 'Discount code', required: false })
   @IsOptional()
   @IsString()
-  discountId?: string;
+  discountCode?: string;
 
   @ApiProperty({ description: 'Additional notes for the sale' })
   @IsOptional()
