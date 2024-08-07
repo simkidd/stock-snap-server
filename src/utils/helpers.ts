@@ -33,3 +33,14 @@ export function generateInvoiceNo(): string {
     .toUpperCase(); // Generate a 6-character alphanumeric string
   return `INV-${date}-${randomSequence}`;
 }
+
+export const generateRandomCode = (length: number = 8): string => {
+  const characters =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  const charactersLength = characters.length;
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+};
