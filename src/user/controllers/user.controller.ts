@@ -49,7 +49,18 @@ export class UserController {
   })
   @ApiResponse({ status: 400, description: 'Bad request.' })
   @Get('/filter')
-  getFilteredUsers(@Query() input: FilterUsersInput): Promise<User[]> {
+  getFilteredUsers(
+    @Query('search') search?: string,
+    @Query('skip') skip?: number,
+    @Query('limit') limit?: number,
+    @Query('page') page?: number,
+  ): Promise<User[]> {
+    const input: FilterUsersInput = {
+      search,
+      skip,
+      limit,
+      page,
+    };
     return this.userService.filterUsers(input);
   }
 
