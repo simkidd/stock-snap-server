@@ -6,7 +6,7 @@ import {
 import { ProductStatusEnum, Sales } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateSaleInput } from '../dtos/sales.dto';
+import { CreateSaleInput, SaleItemInput } from '../dtos/sales.dto';
 import { generateInvoiceNo } from 'src/utils/helpers';
 import { NotificationService } from 'src/notification/services/notification.service';
 
@@ -69,6 +69,7 @@ export class SalesService {
     try {
       const saleItemsData = [];
       let grossTotal = new Decimal(0);
+      let totalQuantity = 0;
 
       for (const item of input.items) {
         const product = await this.prisma.product.findUnique({
@@ -89,6 +90,7 @@ export class SalesService {
         const unitPrice = new Decimal(product.price);
         const totalAmount = unitPrice.mul(item.quantity);
         grossTotal = grossTotal.add(totalAmount);
+        totalQuantity += item.quantity;
 
         saleItemsData.push({
           productId: item.productId,
@@ -151,6 +153,7 @@ export class SalesService {
           cashierId: userId,
           discountId,
           paymentMethod: input.paymentMethod,
+          totalQuantity,
           saleItems: {
             create: saleItemsData,
           },

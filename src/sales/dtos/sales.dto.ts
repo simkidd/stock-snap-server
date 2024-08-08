@@ -1,13 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
+  IsDecimal,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator';
 
-class SaleItemInput {
+export class SaleItemInput {
   @ApiProperty({ description: 'ID of the product being sold' })
   @IsNotEmpty()
   @IsString()
@@ -20,12 +21,12 @@ class SaleItemInput {
 
   @ApiProperty({ description: 'Unit price of the product' })
   @IsNotEmpty()
-  @IsString()
+  @IsDecimal()
   unitPrice: string; // Using string to accommodate Decimal type conversion
 
   @ApiProperty({ description: 'Total amount for this sale item' })
   @IsNotEmpty()
-  @IsString()
+  @IsDecimal()
   totalAmount: string; // Using string to accommodate Decimal type conversion
 
   @ApiProperty({ description: 'Description of the product' })
@@ -60,3 +61,4 @@ export class CreateSaleInput {
   @IsString()
   posNumber?: string;
 }
+
