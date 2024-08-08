@@ -3,24 +3,66 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
+  Query,
   Req,
-  UseGuards,
 } from '@nestjs/common';
-import { UserService } from '../services/user.service';
-import { CreateUserInput } from '../dtos/user.dto';
-import { User, UserRole } from '@prisma/client';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { User, UserRole } from '@prisma/client';
+import { Request } from 'express';
 import { Public } from 'src/auth/decorators/public.decorator';
 import { Roles } from 'src/auth/decorators/roles.decorator';
-import { UserWithoutPassword } from 'src/types/user.type';
-import { Request } from 'express';
-import { AuthGuard } from 'src/auth/guards/auth.guard';
+import {
+  CreateUserInput,
+  FilterUsersInput,
+  UpdateUserInput,
+} from '../dtos/user.dto';
+import { UserService } from '../services/user.service';
 
 @ApiTags('user')
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  // Get all users
+  @Public()
+  // @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return a list of users.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad request.' })
+  @Get('/')
+  getAllUsers(): Promise<User[]> {
+    return this.userService.getAllUsers();
+  }
+
+  // Get all users with pagination and search
+  @Public()
+  // @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Filter users with pagination and search' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return a list of filtered users.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad request.' })
+  @Get('/filter')
+  getFilteredUsers(
+    @Query('search') search?: string,
+    @Query('skip') skip?: number,
+    @Query('limit') limit?: number,
+    @Query('page') page?: number,
+  ): Promise<User[]> {
+    const input: FilterUsersInput = {
+      search,
+      skip,
+      limit,
+      page,
+    };
+    return this.userService.filterUsers(input);
+  }
 
   // Create a new user
   @Roles(UserRole.ADMIN)
@@ -31,8 +73,21 @@ export class UserController {
   })
   @ApiResponse({ status: 400, description: 'Bad request.' })
   @Post('/create')
-  async createUser(@Body() input: CreateUserInput): Promise<User> {
+  createUser(@Body() input: CreateUserInput): Promise<User> {
     return this.userService.createUser(input);
+  }
+
+  // update user
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update a user' })
+  @ApiResponse({
+    status: 201,
+    description: 'The user has been successfully updated.',
+  })
+  @ApiResponse({ status: 400, description: 'Bad request.' })
+  @Patch('/update/:id')
+  updateUser(@Body() input: UpdateUserInput) {
+    return this.userService.updateUser(input);
   }
 
   // Get a single user by ID
@@ -41,7 +96,7 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'Return a user by ID.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
   @Get('/single/:id')
-  async getUser(@Param('id') id: string): Promise<User> {
+  getUser(@Param('id') id: string): Promise<User> {
     return this.userService.getUserById(id);
   }
 
@@ -53,7 +108,7 @@ export class UserController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @Get('/auth/me')
-  async getMe(@Req() req: Request) {
+  getMe(@Req() req: Request) {
     const user = req['user'];
     return this.userService.getMe(user.id);
   }

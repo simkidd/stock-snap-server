@@ -2,15 +2,17 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateUserInput } from '../dtos/user.dto';
 import * as bcrypt from 'bcryptjs';
 import { verify } from 'jsonwebtoken';
+import { PrismaService } from 'src/prisma/prisma.service';
 import { config } from 'src/utils/config';
-import { UserWithoutPassword } from 'src/types/user.type';
+import {
+  CreateUserInput,
+  FilterUsersInput,
+  UpdateUserInput,
+} from '../dtos/user.dto';
 
 @Injectable()
 export class UserService {
@@ -19,8 +21,38 @@ export class UserService {
   async getAllUsers(): Promise<User[]> {
     try {
       const users = await this.prisma.user.findMany();
-
       return users;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async filterUsers(input?: FilterUsersInput): Promise<User[]> {
+    const limit = Number(input?.limit) || 10;
+    const page = input?.page || 1;
+    const skip = (page - 1) * limit;
+    const search = input?.search ? input?.search.toLowerCase() : '';
+
+    try {
+      const users = await this.prisma.user.findMany({
+        where: {
+          OR: [
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        },
+        skip,
+        take: limit,
+      });
+
+      return users.map((user) => ({
+        ...user,
+        password: undefined,
+      }));
     } catch (error) {
       throw error;
     }
@@ -76,6 +108,29 @@ export class UserService {
           ...input,
           password: hashedPassword,
         },
+      });
+
+      return {
+        ...user,
+        password: undefined,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateUser(input: UpdateUserInput): Promise<User> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: input.id },
+      });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      await this.prisma.user.update({
+        where: { id: input.id },
+        data: input,
       });
 
       return {
