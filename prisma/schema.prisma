@@ -132,6 +132,7 @@ model Sales {
   saleItems     SaleItem[]
   note          String?
   posNumber     String?
+  totalQuantity Int        @default(0)
 
   @@map("sales")
 }
