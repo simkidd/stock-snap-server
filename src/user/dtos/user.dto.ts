@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
+import { UserRole, UserStatusEnum } from '@prisma/client';
 import {
   IsEmail,
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -67,4 +68,22 @@ export class FilterUsersInput {
   @IsOptional()
   @IsNumber()
   page?: number;
+}
+
+export class UpdateRoleInput {
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
+  @IsEnum(UserRole)
+  role: UserRole;
+}
+
+export class UpdateStatusInput {
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
+  @IsEnum(UserStatusEnum)
+  status: UserStatusEnum;
 }

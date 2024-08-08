@@ -152,23 +152,24 @@ model SaleItem {
 }
 
 model User {
-  id              String    @id @default(cuid())
-  guid            String    @default(uuid())
+  id              String         @id @default(cuid())
+  guid            String         @default(uuid())
   name            String
   gender          String
   avatar          String?
   avatarId        String?
-  email           String    @unique
-  isEmailVerified Boolean   @default(false)
+  email           String         @unique
+  isEmailVerified Boolean        @default(false)
   password        String
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  addedProducts   Product[] @relation("addedBy")
-  updatedProducts Product[] @relation("updatedBy")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  addedProducts   Product[]      @relation("addedBy")
+  updatedProducts Product[]      @relation("updatedBy")
   sales           Sales[]
-  role            UserRole  @default(STAFF)
+  role            UserRole       @default(STAFF)
   phoneNumber     String?
   address         String?
+  status          UserStatusEnum @default(ACTIVE)
 
   @@map("users")
 }
@@ -275,4 +276,10 @@ enum UserRole {
   ACCOUNTANT
   SUPPLIER_MANAGER
   STAFF
+}
+
+enum UserStatusEnum {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
 }
