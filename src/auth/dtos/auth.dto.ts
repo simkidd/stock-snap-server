@@ -33,30 +33,36 @@ export class LoginResponseDTO {
 }
 
 export class UpdatePasswordInput {
+  @ApiProperty({ example: 'user_id' })
   @IsString()
   @IsNotEmpty()
   id: string;
 
+  @ApiProperty({ example: 'OldPassword123!' })
   @IsString()
   @IsNotEmpty()
   currentPassword: string;
 
+  @ApiProperty({ example: 'NewPassword123!' })
   @IsString()
   @IsNotEmpty()
   newPassword: string;
 }
 
 export class ResetPasswordInput {
+  @ApiProperty({ example: 'user_id' })
   @IsString()
   @IsNotEmpty()
   id: string;
 
+  @ApiProperty({ example: 'NewPassword123!' })
   @IsString()
   @IsNotEmpty()
   newPassword: string;
 }
 
 export class ForgotPasswordInput {
+  @ApiProperty({ example: 'john.doe@example.com' })
   @IsEmail()
   @IsNotEmpty()
   email: string;
