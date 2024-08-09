@@ -11,6 +11,8 @@ import { config } from 'src/utils/config';
 import {
   CreateUserInput,
   FilterUsersInput,
+  UpdateRoleInput,
+  UpdateStatusInput,
   UpdateUserInput,
 } from '../dtos/user.dto';
 
@@ -71,6 +73,21 @@ export class UserService {
         ...user,
         password: undefined,
       };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async findUser(id: string): Promise<User> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id },
+      });
+      if (!user) {
+        throw new NotFoundException('User id not found');
+      }
+
+      return user;
     } catch (error) {
       throw error;
     }
@@ -171,6 +188,46 @@ export class UserService {
         ...user,
         password: undefined,
       };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateUserRole(input: UpdateRoleInput): Promise<User> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: input.id },
+      });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { role: input.role },
+      });
+
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async updateUserStatus(input: UpdateStatusInput): Promise<User> {
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: input.id },
+      });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { status: input.status },
+      });
+
+      return user;
     } catch (error) {
       throw error;
     }

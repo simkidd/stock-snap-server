@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from '@prisma/client';
-import { IsString, IsEmail } from 'class-validator';
+import { IsString, IsEmail, IsNotEmpty } from 'class-validator';
 
 export class CreatePasswordInput {
   @ApiProperty({ example: 'Password123!' })
@@ -30,4 +30,34 @@ export class LoginResponseDTO {
   @ApiProperty({ example: UserRole.STAFF })
   @IsString()
   role: UserRole;
+}
+
+export class UpdatePasswordInput {
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
+  @IsString()
+  @IsNotEmpty()
+  currentPassword: string;
+
+  @IsString()
+  @IsNotEmpty()
+  newPassword: string;
+}
+
+export class ResetPasswordInput {
+  @IsString()
+  @IsNotEmpty()
+  id: string;
+
+  @IsString()
+  @IsNotEmpty()
+  newPassword: string;
+}
+
+export class ForgotPasswordInput {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
 }
