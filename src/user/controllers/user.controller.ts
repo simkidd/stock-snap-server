@@ -16,6 +16,8 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import {
   CreateUserInput,
   FilterUsersInput,
+  UpdateRoleInput,
+  UpdateStatusInput,
   UpdateUserInput,
 } from '../dtos/user.dto';
 import { UserService } from '../services/user.service';
@@ -111,5 +113,26 @@ export class UserController {
   getMe(@Req() req: Request) {
     const user = req['user'];
     return this.userService.getMe(user.id);
+  }
+
+  // Update user role
+  @ApiOperation({ summary: 'Update user role' })
+  @ApiResponse({ status: 200, description: 'User role updated successfully.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  @Patch('/update-role')
+  updateUserRole(@Body() input: UpdateRoleInput): Promise<User> {
+    return this.userService.updateUserRole(input);
+  }
+
+  // Update user status
+  @ApiOperation({ summary: 'Update user status' })
+  @ApiResponse({
+    status: 200,
+    description: 'User status updated successfully.',
+  })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  @Patch('/update-status')
+  updateUserStatus(@Body() input: UpdateStatusInput): Promise<User> {
+    return this.userService.updateUserStatus(input);
   }
 }
