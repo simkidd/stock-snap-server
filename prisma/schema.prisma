@@ -170,6 +170,8 @@ model User {
   phoneNumber     String?
   address         String?
   status          UserStatusEnum @default(ACTIVE)
+  emailToken      String?
+  tokenExpiresAt  DateTime?
 
   @@map("users")
 }
