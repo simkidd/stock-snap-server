@@ -1,25 +1,25 @@
 import {
   Body,
   Controller,
-  Get,
   HttpCode,
   HttpStatus,
   Patch,
   Post,
-  Request,
-  UseGuards,
+  Req,
 } from '@nestjs/common';
-import { AuthService } from '../services/auth.service';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { User, UserRole } from '@prisma/client';
+import { Public } from '../decorators/public.decorator';
+import { Roles } from '../decorators/roles.decorator';
 import {
+  CreateNewPasswordInput,
+  ForgotPasswordInput,
   LoginRequestInput,
   ResetPasswordInput,
   UpdatePasswordInput,
 } from '../dtos/auth.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AuthGuard } from '../guards/auth.guard';
-import { Public } from '../decorators/public.decorator';
-import { User, UserRole } from '@prisma/client';
-import { Roles } from '../decorators/roles.decorator';
+import { AuthService } from '../services/auth.service';
+import { Request } from 'express';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -54,19 +54,33 @@ export class AuthController {
   @ApiOperation({ summary: 'Reset password (Admin)' })
   @ApiResponse({ status: 200, description: 'Password reset successfully.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  @Patch('/reset-password')
-  async resetPassword(@Body() input: ResetPasswordInput): Promise<User> {
-    return this.authService.resetPassword(input);
+  @Patch('/admin/reset-password')
+  async resetPasswordAdmin(@Body() input: ResetPasswordInput): Promise<User> {
+    return this.authService.resetPasswordAdmin(input);
   }
 
-  // // Forgot password
-  // @ApiOperation({ summary: 'Forgot password' })
-  // @ApiResponse({ status: 200, description: 'Password reset email sent.' })
-  // @ApiResponse({ status: 404, description: 'User not found.' })
-  // @Post('forgot-password')
-  // async forgotPassword(
-  //   @Body() input: ForgotPasswordInput,
-  // ): Promise<void> {
-  //   return this.userService.forgotPassword(input);
-  // }
+  // Reset password (User)
+  @Public()
+  @ApiOperation({ summary: 'Reset password (User)' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  @Patch('/user/reset-password')
+  async resetPassword(
+    @Body() input: CreateNewPasswordInput,
+    @Req() req: Request,
+  ): Promise<User> {
+    const origin = req.headers.origin;
+    return this.authService.resetPasswordUser(input, origin);
+  }
+
+  // Forgot password
+  @Public()
+  @ApiOperation({ summary: 'Forgot password' })
+  @ApiResponse({ status: 200, description: 'Password reset email sent.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  @Post('/forgot-password')
+  forgotPassword(@Body() input: ForgotPasswordInput, @Req() req: Request) {
+    const origin = req.headers.origin;
+    return this.authService.forgotPassword(input, origin);
+  }
 }
