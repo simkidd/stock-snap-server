@@ -5,7 +5,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copy package.json and yarn.lock files to the working directory
-COPY yarn.lock ./
+COPY package.json yarn.lock ./
 
 # Install dependencies using Yarn
 RUN yarn install --frozen-lockfile
