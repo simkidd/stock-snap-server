@@ -5,6 +5,7 @@ import * as express from 'express';
 import { config } from './utils/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { SeederService } from './prisma/seeder.service';
 
 const prodOrigins = [];
 
@@ -48,6 +49,9 @@ async function bootstrap() {
 
   const doc = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('api/v1/docs', app, doc);
+
+  const seeder = app.get(SeederService);
+  await seeder.seed();
 
   await app.listen(config.PORT, () =>
     console.log(`Server listening on ${config.PORT}`),

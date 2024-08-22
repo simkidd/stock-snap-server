@@ -19,6 +19,7 @@ import { SalesModule } from './sales/sales.module';
 import { SupplierModule } from './supplier/supplier.module';
 import { UploadModule } from './upload/upload.module';
 import { UserModule } from './user/user.module';
+import { SeederService } from './prisma/seeder.service';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { UserModule } from './user/user.module';
   providers: [
     AppService,
     PrismaService,
+    SeederService,
     {
       provide: APP_GUARD,
       useClass: AuthGuard,
