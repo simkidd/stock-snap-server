@@ -1,24 +1,24 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
-import * as dotenv from 'dotenv';
-import * as express from 'express';
-import { config } from './utils/config';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
+import { NestFactory } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as express from 'express';
+import { AppModule } from './app.module';
+import { config } from './utils/config';
 
-const prodOrigins = [];
-
+const prodOrigins = ['https://stock-snap-client.vercel.app'];
 const devOrigins = ['http://localhost:3000', 'http://localhost:5173'];
 
 const env = config.NODE_ENV;
 
 let origin: string[] | boolean;
 
-if (env == 'production') {
+if (env === 'production') {
   origin = prodOrigins;
-} else if (env == 'development') {
+} else if (env === 'development') {
   origin = [...prodOrigins, ...devOrigins];
-} else origin = true;
+} else {
+  origin = true;
+}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
