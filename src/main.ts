@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as express from 'express';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { config } from './utils/config';
 
@@ -23,6 +24,14 @@ if (env === 'production') {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Security HTTP headers
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: env === 'production' ? undefined : false,
+    }),
+  );
+
   app.enableCors({
     origin,
     credentials: true,
@@ -31,12 +40,22 @@ async function bootstrap() {
   app.use(express.json());
 
   app.setGlobalPrefix(config.API_PATH);
-  app.useGlobalPipes(new ValidationPipe({ enableDebugMessages: true }));
+
+  // Whitelist-strict validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      enableDebugMessages: env !== 'production',
+    }),
+  );
 
   const options = new DocumentBuilder()
-    .setTitle('StockSnap')
-    .setDescription('StockSnap API Documentation')
-    .setVersion('1.0')
+    .setTitle('StockSnap Retail POS')
+    .setDescription(
+      'StockSnap Nigerian Retail & Multi-Tenant POS API Documentation',
+    )
+    .setVersion('2.0')
     .addBearerAuth({
       name: 'Authorization',
       bearerFormat: 'Bearer',
@@ -47,10 +66,12 @@ async function bootstrap() {
     .build();
 
   const doc = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('api/v1/docs', app, doc);
+  SwaggerModule.setup(`${config.API_PATH}/docs`, app, doc);
 
   await app.listen(config.PORT, () =>
-    console.log(`Server listening on ${config.PORT}`),
+    console.log(
+      `🚀 StockSnap POS Server running on port ${config.PORT} (${env})`,
+    ),
   );
 }
 bootstrap();

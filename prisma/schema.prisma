@@ -1,107 +1,220 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
+
+// -------------------------------------------------------------
+// 1. Multi-Tenant Core: Business & Store Hierarchy
+// -------------------------------------------------------------
+
+model Tenant {
+  id                 String              @id @default(cuid())
+  name               String              // e.g. "StockSnap Supermarket"
+  slug               String              @unique
+  currency           String              @default("NGN")
+  currencySymbol     String              @default("₦")
+  phone              String?
+  email              String?
+  address            String?             // e.g. "Peter Odili Road"
+  city               String?             @default("Port Harcourt")
+  state              String?             @default("Rivers State")
+  country            String?             @default("Nigeria")
+  cacNumber          String?             // Corporate Affairs Commission RC/BN
+  vatTIN             String?             // Tax Identification Number
+  logoUrl            String?
+  stores             Store[]
+  users              User[]
+  products           Product[]
+  categories         Category[]
+  brands             Brand[]
+  suppliers          Supplier[]
+  customers          Customer[]
+  discounts          Discount[]
+  sales              Sales[]
+  registers          Register[]
+  registerSessions   RegisterSession[]
+  stockMovements     StockMovement[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@map("tenants")
+}
+
+model Store {
+  id                 String              @id @default(cuid())
+  tenantId           String
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name               String              // e.g. "Port Harcourt Main Branch"
+  slug               String
+  address            String?             // e.g. "Plot 12, Peter Odili Road, Trans-Amadi"
+  city               String?             @default("Port Harcourt")
+  state              String?             @default("Rivers State")
+  phone              String?
+  receiptHeader      String?             // Custom text at top of thermal receipt
+  receiptFooter      String?             // Return policy e.g. "No refund of money after payment"
+  defaultVatRate     Decimal             @default(7.5) // Standard Nigerian VAT (7.5%)
+  isMainStore        Boolean             @default(true)
+  registers          Register[]
+  sales              Sales[]
+  users              User[]
+  stockMovements     StockMovement[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@unique([tenantId, slug])
+  @@map("stores")
+}
+
+// -------------------------------------------------------------
+// 2. Registers & Cashier Shifts (Z-Reports / Float Balancing)
+// -------------------------------------------------------------
+
+model Register {
+  id                 String              @id @default(cuid())
+  tenantId           String
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  storeId            String
+  store              Store               @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name               String              // e.g. "Counter 1", "Fast Lane Register"
+  code               String              // e.g. "REG-01"
+  sessions           RegisterSession[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@unique([storeId, code])
+  @@map("registers")
+}
+
+model RegisterSession {
+  id                 String              @id @default(cuid())
+  tenantId           String
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  registerId         String
+  register           Register            @relation(fields: [registerId], references: [id], onDelete: Cascade)
+  cashierId          String
+  cashier            User                @relation(fields: [cashierId], references: [id])
+  openingFloat       Decimal             @default(0) // Starting cash change in drawer (e.g. ₦10,000)
+  closingCash        Decimal?            // Cash counted physically at shift end
+  expectedCash       Decimal?            // Float + Total Cash Sales
+  difference         Decimal?            // Overage / Shortage (closingCash - expectedCash)
+  status             SessionStatusEnum   @default(OPEN)
+  note               String?
+  openedAt           DateTime            @default(now())
+  closedAt           DateTime?
+  sales              Sales[]
+
+  @@map("register_sessions")
+}
+
+// -------------------------------------------------------------
+// 3. Customer CRM & Store Credit / Debt Ledger
+// -------------------------------------------------------------
+
+model Customer {
+  id                 String              @id @default(cuid())
+  tenantId           String
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name               String
+  phoneNumber        String              // Key identifier at checkout
+  email              String?
+  address            String?
+  storeCreditBalance Decimal             @default(0) // Balance left from change or returns
+  totalDebt          Decimal             @default(0) // Unpaid credit sales
+  debtLimit          Decimal             @default(0) // Maximum allowed credit limit
+  sales              Sales[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@unique([tenantId, phoneNumber])
+  @@map("customers")
+}
+
+// -------------------------------------------------------------
+// 4. Products, Inventory & Break-bulk Packs
+// -------------------------------------------------------------
 
 model Product {
   id                String            @id @default(cuid())
-  guid              String            @default(uuid())
   sku               String
+  barcode           String?           // 1D/2D Barcode (EAN-13, UPC) for laser scanners
   name              String
   slug              String
   size              String?
   color             String?
-  expiryDate        DateTime?
-  unit              String? // Pack, Rows, Cartons, crates etc
+  expiryDate        DateTime?         // Alerts for expiring stock
+  unit              String?           // Pack, Carton, Bottle, Piece, etc.
+  piecesPerPack     Int?              @default(1) // Break-bulk: e.g. 40 packets per carton
   tags              String[]
-  description       String
-  price             Decimal
-  quantity          Int
-  quantitySold      Int?              @default(0)
-  minimumQuantity   Int
-  productCategoryId String
-  productCategory   ProductCategory   @relation(fields: [productCategoryId], references: [id])
+  description       String?
+  costPrice         Decimal           @default(0) // Cost of Goods Sold (for Profit Margins)
+  price             Decimal           // Selling Price in ₦
+  quantity          Int               @default(0)
+  minimumQuantity   Int               @default(5) // Low stock re-order alert threshold
+  isTaxExempt       Boolean           @default(false) // True for zero-rated goods (raw food, medicine)
+  status            ProductStatusEnum @default(AVAILABLE)
+
+  tenantId          String
+  tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  categoryId        String
+  category          Category          @relation(fields: [categoryId], references: [id])
+  brandId           String?
+  brand             Brand?            @relation(fields: [brandId], references: [id])
+  supplierId        String?
+  Supplier          Supplier?         @relation(fields: [supplierId], references: [id])
+  addedById         String
+  addedBy           User              @relation("addedBy", fields: [addedById], references: [id])
+  updatedById       String?
+  updatedBy         User?             @relation("updatedBy", fields: [updatedById], references: [id])
+
+  images            ProductImage[]
+  saleItems         SaleItem[]
+  stockMovements    StockMovement[]
+
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
-  addedById         String
-  updatedById       String?
-  addedBy           User              @relation("addedBy", fields: [addedById], references: [id])
-  updatedBy         User?             @relation("updatedBy", fields: [updatedById], references: [id])
-  status            ProductStatusEnum @default(AVAILABLE)
-  images            ProductImage[]
-  Supplier          Supplier?         @relation(fields: [supplierId], references: [id])
-  supplierId        String?
-  orderProducts     OrderProduct[]
-  brand             Brand?            @relation(fields: [brandId], references: [id])
-  brandId           String?
-  productGroup      ProductGroup?     @relation(fields: [productGroupId], references: [id])
-  productGroupId    String?
-  notifications     Notification[]
-  saleItems         SaleItem[]
 
+  @@unique([tenantId, sku])
   @@map("products")
 }
 
 model Brand {
   id        String    @id @default(cuid())
+  tenantId  String
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name      String
   imageUrl  String?
   publicId  String?
+  slug      String
   products  Product[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  slug      String
 
+  @@unique([tenantId, slug])
   @@map("brands")
 }
 
-model ProductCategory {
-  id         String    @id @default(cuid())
-  guid       String    @default(uuid())
-  name       String
-  slug       String
-  categoryId String
-  category   Category  @relation(fields: [categoryId], references: [id])
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  products   Product[]
+model Category {
+  id        String     @id @default(cuid())
+  tenantId  String
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name      String
+  slug      String
+  parentId  String?
+  parent    Category?  @relation("SubCategories", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Category[] @relation("SubCategories")
+  products  Product[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
-  @@map("product_categories")
-}
-
-model ProductGroup {
-  id         String                 @id @default(cuid())
-  name       String
-  slug       String
-  createdAt  DateTime               @default(now())
-  updatedAt  DateTime               @updatedAt
-  products   Product[]
-  categories ProductGroupCategory[]
-
-  @@map("product_groups")
-}
-
-model ProductGroupCategory {
-  id             String       @id @default(cuid())
-  productGroup   ProductGroup @relation(fields: [productGroupId], references: [id])
-  productGroupId String
-  category       Category     @relation(fields: [categoryId], references: [id])
-  categoryId     String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
-
-  @@map("product_group_categories")
+  @@unique([tenantId, slug])
+  @@map("categories")
 }
 
 model ProductImage {
@@ -110,152 +223,201 @@ model ProductImage {
   publicId  String
   imageUrl  String
   isMain    Boolean  @default(false)
-  product   Product  @relation(fields: [productId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("product_images")
 }
 
+model StockMovement {
+  id             String            @id @default(cuid())
+  tenantId       String
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  storeId        String?
+  store          Store?            @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  productId      String
+  product        Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User              @relation(fields: [userId], references: [id])
+  type           StockMovementType // PURCHASE, SALE, RETURN, ADJUSTMENT, BREAK_BULK
+  quantityChange Int               // Positive or negative
+  reason         String?           // e.g. "Carton opened for piece sales", "Damaged goods"
+  createdAt      DateTime          @default(now())
+
+  @@map("stock_movements")
+}
+
+// -------------------------------------------------------------
+// 5. Sales, POS Checkout, Split Payments & Cash Balance
+// -------------------------------------------------------------
+
 model Sales {
-  id            String     @id @default(cuid())
-  invoiceNo     String     @unique
-  cashierId     String
-  totalAmount   Decimal    @default(0)
-  grossTotal    Decimal    @default(0)
-  paymentMethod String     @default("Cash")
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  discountId    String?
-  discount      Discount?  @relation(fields: [discountId], references: [id])
-  cashier       User       @relation(fields: [cashierId], references: [id])
-  saleItems     SaleItem[]
-  note          String?
-  posNumber     String?
-  totalQuantity Int        @default(0)
+  id                  String               @id @default(cuid())
+  invoiceNo           String               @unique // e.g. "INV-2026-0001"
+  tenantId            String
+  tenant              Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  storeId             String?
+  store               Store?               @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  registerSessionId   String?
+  registerSession     RegisterSession?     @relation(fields: [registerSessionId], references: [id], onDelete: SetNull)
+  cashierId           String
+  cashier             User                 @relation(fields: [cashierId], references: [id])
+  customerId          String?
+  customer            Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
+
+  // Financial Breakdown (in ₦)
+  subTotalAmount      Decimal              @default(0) // Items sum before tax and discount
+  taxAmount           Decimal              @default(0) // 7.5% VAT (if applicable)
+  discountAmount      Decimal              @default(0) // Deducted discount
+  totalAmount         Decimal              @default(0) // Final Net Amount to pay
+  totalQuantity       Int                  @default(0)
+
+  // Cash Change & Tendered Calculations
+  amountTendered      Decimal?             @default(0) // Amount given by customer (e.g. ₦20,000)
+  changeDue           Decimal?             @default(0) // Balance returned to customer (e.g. ₦5,700)
+  
+  paymentMethod       PaymentMethodEnum    @default(CASH) // Primary or SPLIT
+  paymentStatus       PaymentStatusEnum    @default(PAID) // PAID, PARTIALLY_PAID, PENDING
+  
+  discountId          String?
+  discount            Discount?            @relation(fields: [discountId], references: [id])
+  saleItems           SaleItem[]
+  paymentTransactions PaymentTransaction[]
+  
+  note                String?
+  posNumber           String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
   @@map("sales")
 }
 
 model SaleItem {
-  id          String  @id @default(cuid())
+  id          String   @id @default(cuid())
   saleId      String
+  sale        Sales    @relation(fields: [saleId], references: [id], onDelete: Cascade)
   productId   String
+  product     Product  @relation(fields: [productId], references: [id])
   quantity    Int
-  unitPrice   Decimal
-  totalAmount Decimal // Total amount for this item
-  description String
-  sale        Sales   @relation(fields: [saleId], references: [id])
-  product     Product @relation(fields: [productId], references: [id])
+  unitPrice   Decimal  // Selling price per item
+  costPrice   Decimal  @default(0) // Cost price at moment of sale (for accurate historical profit)
+  totalAmount Decimal  // quantity * unitPrice
+  description String?
 
   @@map("sale_items")
 }
 
+model PaymentTransaction {
+  id                String            @id @default(cuid())
+  tenantId          String
+  saleId            String
+  sale              Sales             @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  paymentMethod     PaymentMethodEnum // CASH, POS_CARD, BANK_TRANSFER, STORE_CREDIT
+  amount            Decimal           // Portion paid via this channel
+  
+  // Nigerian Payment Details
+  bankName          String?           // For Bank Transfer (e.g. "GTBank", "OPay", "Moniepoint")
+  transferReference String?           // Session ID or NIP Ref
+  posTerminalName   String?           // e.g. "Moniepoint Terminal 1"
+  posRrnNumber      String?           // Retrieval Reference Number from POS terminal receipt
+  note              String?
+  createdAt         DateTime          @default(now())
+
+  @@map("payment_transactions")
+}
+
+// -------------------------------------------------------------
+// 6. User Management & Authentication Models
+// -------------------------------------------------------------
+
 model User {
-  id              String         @id @default(cuid())
-  guid            String         @default(uuid())
-  name            String
-  gender          String
-  avatar          String?
-  avatarId        String?
-  email           String         @unique
-  isEmailVerified Boolean        @default(false)
-  password        String
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  addedProducts   Product[]      @relation("addedBy")
-  updatedProducts Product[]      @relation("updatedBy")
-  sales           Sales[]
-  role            UserRole       @default(STAFF)
-  phoneNumber     String?
-  address         String?
-  status          UserStatusEnum @default(ACTIVE)
-  emailToken      String?
-  tokenExpiresAt  DateTime?
+  id               String            @id @default(cuid())
+  name             String
+  gender           String?
+  avatar           String?
+  avatarId         String?
+  email            String            @unique
+  role             UserRole          @default(CASHIER)
+  status           UserStatusEnum    @default(ACTIVE)
+  phoneNumber      String?
+  address          String?
+
+  tenantId         String?
+  tenant           Tenant?           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  storeId          String?
+  store            Store?            @relation(fields: [storeId], references: [id], onDelete: SetNull)
+
+  auth             Auth?
+  addedProducts    Product[]         @relation("addedBy")
+  updatedProducts  Product[]         @relation("updatedBy")
+  sales            Sales[]
+  registerSessions RegisterSession[]
+  stockMovements   StockMovement[]
+
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
   @@map("users")
 }
 
-model Category {
-  id                   String                 @id @default(cuid())
-  name                 String
-  slug                 String
-  productCategories    ProductCategory[]
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime               @updatedAt
-  ProductGroupCategory ProductGroupCategory[]
+model Auth {
+  id               String            @id @default(cuid())
+  userId           String            @unique
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  password         String
+  pinCode          String?           // Hashed 4-digit PIN for cashier quick lock/unlock & manager override
+  isEmailVerified  Boolean           @default(false)
+  emailToken       String?           // OTP reset / verification code
+  tokenExpiresAt   DateTime?         // OTP expiration
+  refreshToken     String?           // Hashed refresh token
+  lastLoginAt      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 
-  @@map("categories")
+  @@map("auths")
 }
 
+// -------------------------------------------------------------
+// 7. Discounts, Suppliers & Orders
+// -------------------------------------------------------------
+
 model Discount {
-  id          String   @id @default(cuid())
-  code        String   @unique
+  id          String    @id @default(cuid())
+  tenantId    String
+  tenant      Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  code        String
   description String?
-  percentage  Float    @default(0.0)
+  percentage  Float     @default(0.0)
   startDate   DateTime
   endDate     DateTime
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
   sales       Sales[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
+  @@unique([tenantId, code])
   @@map("discounts")
 }
 
 model Supplier {
   id             String    @id @default(cuid())
+  tenantId       String
+  tenant         Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   name           String
   contactPhone   String?
   contactAddress String?
+  slug           String
+  products       Product[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  products       Product[]
-  orders         Order[]
-  slug           String
 
+  @@unique([tenantId, slug])
   @@map("suppliers")
 }
 
-model Order {
-  id            String          @id @default(cuid())
-  orderNumber   String          @unique
-  orderDate     DateTime        @default(now())
-  totalAmount   Decimal
-  status        OrderStatusEnum
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  supplierId    String
-  supplier      Supplier        @relation(fields: [supplierId], references: [id])
-  orderProducts OrderProduct[]
-
-  @@map("orders")
-}
-
-model OrderProduct {
-  id        String   @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Decimal
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  order     Order    @relation(fields: [orderId], references: [id])
-  product   Product  @relation(fields: [productId], references: [id])
-
-  @@map("order_products")
-}
-
-model Notification {
-  id        String   @id @default(cuid())
-  message   String
-  read      Boolean  @default(false)
-  product   Product? @relation(fields: [productId], references: [id])
-  productId String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("notifications")
-}
+// -------------------------------------------------------------
+// 8. Enums
+// -------------------------------------------------------------
 
 enum ProductStatusEnum {
   AVAILABLE
@@ -263,21 +425,44 @@ enum ProductStatusEnum {
   LOW
 }
 
-enum OrderStatusEnum {
+enum SessionStatusEnum {
+  OPEN
+  CLOSED
+}
+
+enum PaymentMethodEnum {
+  CASH
+  POS_CARD
+  BANK_TRANSFER
+  STORE_CREDIT
+  SPLIT
+}
+
+enum PaymentStatusEnum {
+  PAID
+  PARTIALLY_PAID
   PENDING
-  COMPLETED
-  CANCELLED
+}
+
+enum StockMovementType {
+  PURCHASE
+  SALE
+  RETURN
+  ADJUSTMENT
+  BREAK_BULK
 }
 
 enum UserRole {
   ADMIN
-  MANAGER
+  STORE_MANAGER
+  CASHIER
   SALES_REP
   INVENTORY_CONTROLLER
-  SUPPORT
   ACCOUNTANT
   SUPPLIER_MANAGER
   STAFF
+  MANAGER
+  SUPPORT
 }
 
 enum UserStatusEnum {

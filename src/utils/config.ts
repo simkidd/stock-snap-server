@@ -11,18 +11,18 @@ export const config = {
   API_PATH: process.env.API_PATH || '/api/v1',
   NODE_ENV: env,
   JWT_SECRET: process.env.JWT_SECRET || 'r78hbi8hyin',
+
+  // Brevo (Transactional Email & SMS API)
+  BREVO_API_KEY: process.env.BREVO_API_KEY || '',
+  BREVO_SMS_SENDER: process.env.BREVO_SMS_SENDER || 'StockSnap',
+  BREVO_SENDER_EMAIL: process.env.BREVO_SENDER_EMAIL || 'contact@stocksnap.ng',
+  BREVO_SENDER_NAME: process.env.BREVO_SENDER_NAME || 'StockSnap Retail',
+
+  // Cloudinary
   CLOUDINARY_NAME: process.env.CLOUDINARY_CLOUD_NAME,
   CLOUDINARY_KEY: process.env.CLOUDINARY_API_KEY,
   CLOUDINARY_SECRET: process.env.CLOUDINARY_API_SECRET,
-  EMAIL_HOST: process.env.EMAIL_HOST,
-  EMAIL_PORT: process.env.EMAIL_PORT,
-  EMAIL_USERNAME: process.env.EMAIL_USERNAME,
-  EMAIL_PASSWORD: process.env.EMAIL_PASSWORD,
-  MAIL_SENDER: {
-    name: 'StockSnap',
-    address: 'contact@stocksnap.com',
-  },
-  EMAIL_IGNORE_TLS: Boolean(process.env.EMAIL_IGNORE_TLS),
+
   APP_NAME: 'StockSnap',
-  APP_DOMAIN: 'stocksnap.test',
+  APP_DOMAIN: 'stocksnap.ng',
 };
