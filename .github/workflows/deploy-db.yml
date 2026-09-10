@@ -1,4 +1,4 @@
-name: Deploy
+name: Deploy Database Migrations
 
 on:
   push:
@@ -18,15 +18,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Node.js environment
-      - name: Setup Node
-        uses: actions/setup-node@v3
+      # Step 2: Set up Node.js 20 environment with Yarn caching
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
 
-      # Step 3: Install dependencies using Yarn
+      # Step 3: Install dependencies using Yarn (with frozen lockfile)
       - name: Install Dependencies
-        run: yarn install
+        run: yarn install --frozen-lockfile
 
-      # Step 4: Apply all pending migrations to the database using Prisma
+      # Step 4: Generate Prisma Client
+      - name: Generate Prisma Client
+        run: yarn prisma:generate
+
+      # Step 5: Apply all pending migrations to the database
       - name: Apply Database Migrations
         run: yarn prisma migrate deploy
         env:
