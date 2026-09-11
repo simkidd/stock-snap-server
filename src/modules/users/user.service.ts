@@ -21,12 +21,7 @@ export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getAllUsers(): Promise<User[]> {
-    try {
-      const users = await this.prisma.user.findMany();
-      return users;
-    } catch (error) {
-      throw error;
-    }
+    return this.prisma.user.findMany();
   }
 
   async filterUsers(input?: FilterUsersInput): Promise<User[]> {
@@ -35,190 +30,138 @@ export class UserService {
     const skip = (page - 1) * limit;
     const search = input?.search ? input?.search.toLowerCase() : '';
 
-    try {
-      const users = await this.prisma.user.findMany({
-        where: {
-          OR: [
-            {
-              name: {
-                contains: search,
-                mode: 'insensitive',
-              },
+    return this.prisma.user.findMany({
+      where: {
+        OR: [
+          {
+            name: {
+              contains: search,
+              mode: 'insensitive',
             },
-          ],
-        },
-        skip,
-        take: limit,
-      });
-
-      return users;
-    } catch (error) {
-      throw error;
-    }
+          },
+        ],
+      },
+      skip,
+      take: limit,
+    });
   }
 
   async getUserById(id: string): Promise<User> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id },
-      });
-      if (!user) {
-        throw new NotFoundException('User id not found');
-      }
-
-      return user;
-    } catch (error) {
-      throw error;
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+    if (!user) {
+      throw new NotFoundException('User id not found');
     }
+    return user;
   }
 
   async findUser(id: string) {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id },
-        include: { auth: true },
-      });
-      if (!user) {
-        throw new NotFoundException('User id not found');
-      }
-
-      return user;
-    } catch (error) {
-      throw error;
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: { auth: true },
+    });
+    if (!user) {
+      throw new NotFoundException('User id not found');
     }
+    return user;
   }
 
   async getUserByEmail(email: string) {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { email },
-        include: { auth: true },
-      });
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      return user;
-    } catch (error) {
-      throw error;
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      include: { auth: true },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+    return user;
   }
 
   async createUser(input: CreateUserInput): Promise<User> {
-    try {
-      const existingUser = await this.prisma.user.findUnique({
-        where: { email: input.email },
-      });
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: input.email },
+    });
 
-      if (existingUser) {
-        throw new ConflictException('Email already in use');
-      }
+    if (existingUser) {
+      throw new ConflictException('Email already in use');
+    }
 
-      const hashedPassword = await bcrypt.hash(input.password, 10);
-      const { password, ...userData } = input;
+    const hashedPassword = await bcrypt.hash(input.password, 10);
+    const { password: _password, ...userData } = input;
 
-      const user = await this.prisma.user.create({
-        data: {
-          ...userData,
-          auth: {
-            create: {
-              password: hashedPassword,
-            },
+    return this.prisma.user.create({
+      data: {
+        ...userData,
+        auth: {
+          create: {
+            password: hashedPassword,
           },
         },
-      });
-
-      return user;
-    } catch (error) {
-      throw error;
-    }
+      },
+    });
   }
 
   async updateUser(input: UpdateUserInput): Promise<User> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: input.id },
-      });
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      const updatedUser = await this.prisma.user.update({
-        where: { id: input.id },
-        data: input,
-      });
-
-      return updatedUser;
-    } catch (error) {
-      throw error;
+    const user = await this.prisma.user.findUnique({
+      where: { id: input.id },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+
+    return this.prisma.user.update({
+      where: { id: input.id },
+      data: input,
+    });
   }
 
-  async decodeJWT(token: string): Promise<User> {
+  async decodeJWT(token: string): Promise<User | null> {
     if (!token) return null;
     try {
       const { id } = verify(token, config.JWT_SECRET) as { id: string };
-      const user = await this.getUserById(id);
-
-      return user;
-    } catch (error) {
+      return await this.getUserById(id);
+    } catch (_error) {
       console.error('Invalid signature on decodeJWT');
       return null;
     }
   }
 
   async getMe(id: string): Promise<User> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id },
-      });
-      if (!user) {
-        throw new NotFoundException(`User not found`);
-      }
-
-      return user;
-    } catch (error) {
-      throw error;
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+    return user;
   }
 
   async updateUserRole(input: UpdateRoleInput): Promise<User> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: input.id },
-      });
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { role: input.role },
-      });
-
-      return user;
-    } catch (error) {
-      throw error;
+    const user = await this.prisma.user.findUnique({
+      where: { id: input.id },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+
+    return this.prisma.user.update({
+      where: { id: user.id },
+      data: { role: input.role },
+    });
   }
 
   async updateUserStatus(input: UpdateStatusInput): Promise<User> {
-    try {
-      const user = await this.prisma.user.findUnique({
-        where: { id: input.id },
-      });
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: { status: input.status },
-      });
-
-      return user;
-    } catch (error) {
-      throw error;
+    const user = await this.prisma.user.findUnique({
+      where: { id: input.id },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+
+    return this.prisma.user.update({
+      where: { id: user.id },
+      data: { status: input.status },
+    });
   }
 }

@@ -278,7 +278,7 @@ export class AuthService {
   // reset user password (User)
   async resetPasswordUser(
     input: CreateNewPasswordInput,
-    origin: string,
+    _origin?: string,
   ): Promise<User> {
     const user = await this.userService.findUser(input.userId);
     if (!user || !user.auth || user.auth.emailToken !== input.token) {

@@ -13,6 +13,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.PROD_DIRECT_URL }}
+
     steps:
       # Step 1: Checkout the repository
       - name: Checkout repository
@@ -44,6 +48,3 @@ jobs:
       # Step 7: Apply all pending migrations to the database
       - name: Apply Database Migrations
         run: yarn prisma migrate deploy
-        env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-          DIRECT_URL: ${{ secrets.PROD_DIRECT_URL }}
