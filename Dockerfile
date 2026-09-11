@@ -1,55 +1,29 @@
-# ==============================================================================
-# Stage 1: Build & Compile
-# ==============================================================================
-FROM node:22-alpine AS builder
+# Use an official Node.js runtime as a parent image
+FROM node:22-alpine
 
+# Set the working directory in the container
 WORKDIR /app
 
-# Install system dependencies needed for Prisma engines on Alpine
-RUN apk add --no-cache openssl libc6-compat
+# Install build dependencies (e.g., for Prisma)
+RUN apk add --no-cache openssl
 
-# Copy package manifests & install all dependencies
+# Copy package.json and yarn.lock files to the working directory
 COPY package.json yarn.lock ./
+
+# Install dependencies using Yarn
 RUN yarn install --frozen-lockfile
 
-# Copy Prisma schema and application source
-COPY prisma ./prisma
-COPY tsconfig*.json nest-cli.json ./
-COPY src ./src
+# Copy the rest of your application files to the working directory
+COPY . .
 
-# Generate Prisma Client and compile NestJS to dist/
+# Generate Prisma Client
 RUN yarn prisma generate
+
+# Build your application
 RUN yarn build
 
-# Remove development dependencies to keep production footprint minimal
-RUN yarn install --production --ignore-scripts --prefer-offline
+# Expose the port your app runs on
+EXPOSE ${PORT}
 
-# ==============================================================================
-# Stage 2: Production Runtime
-# ==============================================================================
-FROM node:22-alpine AS runner
-
-WORKDIR /app
-
-# Install OpenSSL for Prisma runtime queries
-RUN apk add --no-cache openssl dumb-init
-
-ENV NODE_ENV=production
-ENV PORT=8080
-
-# Create non-root user for security
-USER node
-
-# Copy production artifacts from builder stage
-COPY --chown=node:node --from=builder /app/package.json ./package.json
-COPY --chown=node:node --from=builder /app/node_modules ./node_modules
-COPY --chown=node:node --from=builder /app/dist ./dist
-COPY --chown=node:node --from=builder /app/prisma ./prisma
-COPY --chown=node:node --from=builder /app/src/generated ./src/generated
-
-EXPOSE 8080
-
-# Use dumb-init to properly handle PID 1 signals (graceful shutdown)
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-
-CMD ["node", "dist/main"]
+# Define the command to start your application
+CMD ["yarn", "start:prod"]
