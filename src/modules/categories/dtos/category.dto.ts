@@ -2,14 +2,20 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateCategoryInput {
-  @ApiProperty({ example: 'Drinks & Beverages', description: 'Main Category Name' })
+  @ApiProperty({
+    example: 'Drinks & Beverages',
+    description: 'Main Category Name',
+  })
   @IsNotEmpty()
   @IsString()
   name: string;
 }
 
 export class CreateSubCategoryInput {
-  @ApiProperty({ example: 'Soft Drinks & Sodas', description: 'Sub-Category Name' })
+  @ApiProperty({
+    example: 'Soft Drinks & Sodas',
+    description: 'Sub-Category Name',
+  })
   @IsNotEmpty()
   @IsString()
   name: string;

@@ -1,8 +1,17 @@
 import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
 import { RegisterService } from './register.service';
-import { CloseShiftInput, CreateRegisterInput, OpenShiftInput } from './dtos/register.dto';
+import {
+  CloseShiftInput,
+  CreateRegisterInput,
+  OpenShiftInput,
+} from './dtos/register.dto';
 
 @ApiTags('registers')
 @Controller('registers')
@@ -36,7 +45,9 @@ export class RegisterController {
   }
 
   @ApiBearerAuth('Authorization')
-  @ApiOperation({ summary: 'Cashier opens shift with opening cash float (e.g. ₦10,000)' })
+  @ApiOperation({
+    summary: 'Cashier opens shift with opening cash float (e.g. ₦10,000)',
+  })
   @ApiResponse({ status: 201, description: 'Shift session opened.' })
   @Post('open-shift')
   openShift(@Body() input: OpenShiftInput, @Req() req: Request) {
@@ -45,8 +56,13 @@ export class RegisterController {
   }
 
   @ApiBearerAuth('Authorization')
-  @ApiOperation({ summary: 'Cashier closes shift / End-of-Day Z-Report with cash variance' })
-  @ApiResponse({ status: 200, description: 'Shift closed and Z-Report generated.' })
+  @ApiOperation({
+    summary: 'Cashier closes shift / End-of-Day Z-Report with cash variance',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Shift closed and Z-Report generated.',
+  })
   @Post('close-shift')
   closeShift(@Body() input: CloseShiftInput) {
     return this.registerService.closeShift(input);

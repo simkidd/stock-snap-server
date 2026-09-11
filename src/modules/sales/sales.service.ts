@@ -88,15 +88,29 @@ export class SalesService {
   /**
    * High-speed atomic POS checkout with split payments, change calculation, and stock decrement
    */
-  async createSale(input: CreateSaleInput, userId: string, tenantId?: string, storeId?: string): Promise<Sales> {
+  async createSale(
+    input: CreateSaleInput,
+    userId: string,
+    tenantId?: string,
+    storeId?: string,
+  ): Promise<Sales> {
     // 1. Resolve user, tenant, and store
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('Cashier account not found');
 
-    const resolvedTenantId = tenantId || user.tenantId || (await this.prisma.tenant.findFirst())?.id;
-    if (!resolvedTenantId) throw new BadRequestException('Tenant not identified');
+    const resolvedTenantId =
+      tenantId || user.tenantId || (await this.prisma.tenant.findFirst())?.id;
+    if (!resolvedTenantId)
+      throw new BadRequestException('Tenant not identified');
 
-    const resolvedStoreId = storeId || user.storeId || (await this.prisma.store.findFirst({ where: { tenantId: resolvedTenantId } }))?.id;
+    const resolvedStoreId =
+      storeId ||
+      user.storeId ||
+      (
+        await this.prisma.store.findFirst({
+          where: { tenantId: resolvedTenantId },
+        })
+      )?.id;
 
     // 2. Process checkout within atomic database transaction
     return this.prisma.$transaction(async (tx) => {
@@ -110,7 +124,9 @@ export class SalesService {
           where: { id: item.productId },
         });
         if (!product) {
-          throw new NotFoundException(`Product with ID ${item.productId} not found`);
+          throw new NotFoundException(
+            `Product with ID ${item.productId} not found`,
+          );
         }
 
         if (product.quantity < item.quantity) {
@@ -119,7 +135,10 @@ export class SalesService {
           );
         }
 
-        const unitPrice = item.unitPrice !== undefined ? new Decimal(item.unitPrice) : new Decimal(product.price);
+        const unitPrice =
+          item.unitPrice !== undefined
+            ? new Decimal(item.unitPrice)
+            : new Decimal(product.price);
         const itemTotal = unitPrice.mul(item.quantity);
         subTotalAmount = subTotalAmount.add(itemTotal);
         totalQuantity += item.quantity;
@@ -175,7 +194,10 @@ export class SalesService {
       let discountId: string | null = null;
       if (input.discountCode) {
         const discount = await tx.discount.findFirst({
-          where: { code: input.discountCode.toUpperCase(), tenantId: resolvedTenantId },
+          where: {
+            code: input.discountCode.toUpperCase(),
+            tenantId: resolvedTenantId,
+          },
         });
         if (discount) {
           const now = new Date();
@@ -269,15 +291,24 @@ export class SalesService {
 
       // 8. Handle Customer Store Credit / Debt Ledger
       if (input.customerId) {
-        const customer = await tx.customer.findUnique({ where: { id: input.customerId } });
-        if (customer && input.paymentMethod === PaymentMethodEnum.STORE_CREDIT) {
+        const customer = await tx.customer.findUnique({
+          where: { id: input.customerId },
+        });
+        if (
+          customer &&
+          input.paymentMethod === PaymentMethodEnum.STORE_CREDIT
+        ) {
           if (new Decimal(customer.storeCreditBalance).lessThan(totalAmount)) {
-            throw new BadRequestException(`Customer has insufficient store credit balance.`);
+            throw new BadRequestException(
+              `Customer has insufficient store credit balance.`,
+            );
           }
           await tx.customer.update({
             where: { id: customer.id },
             data: {
-              storeCreditBalance: new Decimal(customer.storeCreditBalance).sub(totalAmount),
+              storeCreditBalance: new Decimal(customer.storeCreditBalance).sub(
+                totalAmount,
+              ),
             },
           });
         }
@@ -348,8 +379,12 @@ export class SalesService {
       orderBy: { quantity: 'asc' },
     });
 
-    const outOfStockCount = stockAlerts.filter((p) => p.status === ProductStatusEnum.OUT).length;
-    const lowStockCount = stockAlerts.filter((p) => p.status === ProductStatusEnum.LOW).length;
+    const outOfStockCount = stockAlerts.filter(
+      (p) => p.status === ProductStatusEnum.OUT,
+    ).length;
+    const lowStockCount = stockAlerts.filter(
+      (p) => p.status === ProductStatusEnum.LOW,
+    ).length;
 
     return {
       todayDate: todayStart.toISOString().split('T')[0],

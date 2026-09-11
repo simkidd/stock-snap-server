@@ -3,9 +3,19 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PaymentMethodEnum, Prisma, Register, RegisterSession, SessionStatusEnum } from 'src/generated/prisma';
+import {
+  PaymentMethodEnum,
+  Prisma,
+  Register,
+  RegisterSession,
+  SessionStatusEnum,
+} from 'src/generated/prisma';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CloseShiftInput, CreateRegisterInput, OpenShiftInput } from './dtos/register.dto';
+import {
+  CloseShiftInput,
+  CreateRegisterInput,
+  OpenShiftInput,
+} from './dtos/register.dto';
 
 const { Decimal } = Prisma;
 
@@ -20,18 +30,32 @@ export class RegisterService {
         store: true,
         sessions: {
           where: { status: SessionStatusEnum.OPEN },
-          include: { cashier: { select: { id: true, name: true, email: true } } },
+          include: {
+            cashier: { select: { id: true, name: true, email: true } },
+          },
         },
       },
     });
   }
 
-  async createRegister(input: CreateRegisterInput, userId: string, tenantId?: string): Promise<Register> {
+  async createRegister(
+    input: CreateRegisterInput,
+    userId: string,
+    tenantId?: string,
+  ): Promise<Register> {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    const resolvedTenantId = tenantId || user?.tenantId || (await this.prisma.tenant.findFirst())?.id;
+    const resolvedTenantId =
+      tenantId || user?.tenantId || (await this.prisma.tenant.findFirst())?.id;
     if (!resolvedTenantId) throw new BadRequestException('Tenant not found');
 
-    const resolvedStoreId = input.storeId || user?.storeId || (await this.prisma.store.findFirst({ where: { tenantId: resolvedTenantId } }))?.id;
+    const resolvedStoreId =
+      input.storeId ||
+      user?.storeId ||
+      (
+        await this.prisma.store.findFirst({
+          where: { tenantId: resolvedTenantId },
+        })
+      )?.id;
     if (!resolvedStoreId) throw new BadRequestException('Store not found');
 
     return this.prisma.register.create({
@@ -47,7 +71,11 @@ export class RegisterService {
   /**
    * Cashier opens shift with initial opening cash float
    */
-  async openShift(input: OpenShiftInput, cashierId: string, tenantId?: string): Promise<RegisterSession> {
+  async openShift(
+    input: OpenShiftInput,
+    cashierId: string,
+    tenantId?: string,
+  ): Promise<RegisterSession> {
     const register = await this.prisma.register.findUnique({
       where: { id: input.registerId },
     });
@@ -61,7 +89,9 @@ export class RegisterService {
       },
     });
     if (activeShift) {
-      throw new BadRequestException('An active shift is already open on this register. Please close it first.');
+      throw new BadRequestException(
+        'An active shift is already open on this register. Please close it first.',
+      );
     }
 
     const resolvedTenantId = tenantId || register.tenantId;
@@ -182,7 +212,9 @@ export class RegisterService {
         difference,
         status: SessionStatusEnum.CLOSED,
         closedAt: new Date(),
-        note: input.note ? `${session.note ? session.note + ' | ' : ''}${input.note}` : session.note,
+        note: input.note
+          ? `${session.note ? session.note + ' | ' : ''}${input.note}`
+          : session.note,
       },
     });
 
@@ -201,7 +233,11 @@ export class RegisterService {
         expectedCashInDrawer: Number(expectedCash),
         actualCashCounted: Number(closingCash),
         variance: Number(difference),
-        varianceStatus: difference.isZero() ? 'BALANCED' : difference.isPositive() ? 'OVERAGE' : 'SHORTAGE',
+        varianceStatus: difference.isZero()
+          ? 'BALANCED'
+          : difference.isPositive()
+            ? 'OVERAGE'
+            : 'SHORTAGE',
         currency: 'NGN',
         currencySymbol: '₦',
       },

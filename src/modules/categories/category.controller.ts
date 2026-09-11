@@ -8,7 +8,12 @@ import {
   Post,
   Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Category, UserRole } from 'src/generated/prisma';
 import {
   CreateCategoryInput,
@@ -25,8 +30,13 @@ export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
   @Public()
-  @ApiOperation({ summary: 'Get all categories with their sub-categories nested' })
-  @ApiResponse({ status: 200, description: 'Return all categories with nested subcategories.' })
+  @ApiOperation({
+    summary: 'Get all categories with their sub-categories nested',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all categories with nested subcategories.',
+  })
   @Get()
   getAllCategories(@Req() req: Request): Promise<Category[]> {
     const tenantId = req['user']?.tenantId;
@@ -45,7 +55,10 @@ export class CategoryController {
   @ApiBearerAuth('Authorization')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.INVENTORY_CONTROLLER)
   @ApiOperation({ summary: 'Create a main category' })
-  @ApiResponse({ status: 201, description: 'Main category created successfully.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Main category created successfully.',
+  })
   @Post()
   createCategory(
     @Body() input: CreateCategoryInput,
@@ -58,7 +71,10 @@ export class CategoryController {
   @ApiBearerAuth('Authorization')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.INVENTORY_CONTROLLER)
   @ApiOperation({ summary: 'Create a sub-category under a parent category' })
-  @ApiResponse({ status: 201, description: 'Sub-category created successfully.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Sub-category created successfully.',
+  })
   @Post('sub')
   createSubCategory(
     @Body() input: CreateSubCategoryInput,
@@ -89,7 +105,10 @@ export class CategoryController {
   @ApiBearerAuth('Authorization')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
   @ApiOperation({ summary: 'Delete a sub-category' })
-  @ApiResponse({ status: 200, description: 'Sub-category deleted successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Sub-category deleted successfully.',
+  })
   @Delete('sub/:id')
   deleteSubCategory(@Param('id') id: string): Promise<Category> {
     return this.categoryService.deleteSubCategory(id);

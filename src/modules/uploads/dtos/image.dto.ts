@@ -1,7 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UploadedFileResponse {
-  @ApiProperty({ example: 'https://res.cloudinary.com/demo/image/upload/v12345/products/item.jpg' })
+  @ApiProperty({
+    example:
+      'https://res.cloudinary.com/demo/image/upload/v12345/products/item.jpg',
+  })
   url: string;
 
   @ApiProperty({ example: 'stock_snap/products/item_abc123' })

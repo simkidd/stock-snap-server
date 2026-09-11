@@ -15,18 +15,22 @@ export class DiscountService {
     });
   }
 
-  async createDiscount(input: CreateDiscountInput, tenantId?: string): Promise<Discount> {
+  async createDiscount(
+    input: CreateDiscountInput,
+    tenantId?: string,
+  ): Promise<Discount> {
     if (input.startDate >= input.endDate) {
       throw new BadRequestException('End date must be after start date.');
     }
 
-    const resolvedTenantId = tenantId || (await this.prisma.tenant.findFirst())?.id;
+    const resolvedTenantId =
+      tenantId || (await this.prisma.tenant.findFirst())?.id;
     const discountCode = await this.generateUniqueCode(resolvedTenantId);
 
     return this.prisma.discount.create({
       data: {
         ...input,
-        tenantId: resolvedTenantId as string,
+        tenantId: resolvedTenantId,
         code: discountCode,
       },
     });

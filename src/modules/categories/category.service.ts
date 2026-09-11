@@ -56,8 +56,12 @@ export class CategoryService {
   /**
    * Create Main Category
    */
-  async createCategory(input: CreateCategoryInput, tenantId?: string): Promise<Category> {
-    const resolvedTenantId = tenantId || (await this.prisma.tenant.findFirst())?.id;
+  async createCategory(
+    input: CreateCategoryInput,
+    tenantId?: string,
+  ): Promise<Category> {
+    const resolvedTenantId =
+      tenantId || (await this.prisma.tenant.findFirst())?.id;
     if (!resolvedTenantId) throw new BadRequestException('Tenant not found');
 
     const name = input.name.trim();
@@ -88,7 +92,8 @@ export class CategoryService {
     input: CreateSubCategoryInput,
     tenantId?: string,
   ): Promise<Category> {
-    const resolvedTenantId = tenantId || (await this.prisma.tenant.findFirst())?.id;
+    const resolvedTenantId =
+      tenantId || (await this.prisma.tenant.findFirst())?.id;
     if (!resolvedTenantId) throw new BadRequestException('Tenant not found');
 
     const parent = await this.prisma.category.findUnique({

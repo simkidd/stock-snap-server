@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { Customer, Prisma } from 'src/generated/prisma';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { AdjustCreditOrDebtInput, CreateCustomerInput, UpdateCustomerInput } from './dtos/customer.dto';
+import {
+  AdjustCreditOrDebtInput,
+  CreateCustomerInput,
+  UpdateCustomerInput,
+} from './dtos/customer.dto';
 
 const { Decimal } = Prisma;
 
@@ -38,7 +42,10 @@ export class CustomerService {
   /**
    * Fast checkout phone number lookup
    */
-  async findByPhoneNumber(phoneNumber: string, tenantId?: string): Promise<Customer> {
+  async findByPhoneNumber(
+    phoneNumber: string,
+    tenantId?: string,
+  ): Promise<Customer> {
     const cleanPhone = phoneNumber.trim();
     const customer = await this.prisma.customer.findFirst({
       where: {
@@ -52,12 +59,19 @@ export class CustomerService {
         },
       },
     });
-    if (!customer) throw new NotFoundException(`No customer found with phone "${phoneNumber}"`);
+    if (!customer)
+      throw new NotFoundException(
+        `No customer found with phone "${phoneNumber}"`,
+      );
     return customer;
   }
 
-  async createCustomer(input: CreateCustomerInput, tenantId?: string): Promise<Customer> {
-    const resolvedTenantId = tenantId || (await this.prisma.tenant.findFirst())?.id;
+  async createCustomer(
+    input: CreateCustomerInput,
+    tenantId?: string,
+  ): Promise<Customer> {
+    const resolvedTenantId =
+      tenantId || (await this.prisma.tenant.findFirst())?.id;
     if (!resolvedTenantId) throw new BadRequestException('Tenant not found');
 
     const cleanPhone = input.phoneNumber.trim();
@@ -65,7 +79,9 @@ export class CustomerService {
       where: { phoneNumber: cleanPhone, tenantId: resolvedTenantId },
     });
     if (existing) {
-      throw new ConflictException(`Customer with phone "${cleanPhone}" already exists`);
+      throw new ConflictException(
+        `Customer with phone "${cleanPhone}" already exists`,
+      );
     }
 
     return this.prisma.customer.create({
@@ -73,13 +89,17 @@ export class CustomerService {
         ...input,
         phoneNumber: cleanPhone,
         tenantId: resolvedTenantId,
-        debtLimit: input.debtLimit ? new Decimal(input.debtLimit) : new Decimal(0),
+        debtLimit: input.debtLimit
+          ? new Decimal(input.debtLimit)
+          : new Decimal(0),
       },
     });
   }
 
   async updateCustomer(input: UpdateCustomerInput): Promise<Customer> {
-    const customer = await this.prisma.customer.findUnique({ where: { id: input.id } });
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: input.id },
+    });
     if (!customer) throw new NotFoundException('Customer not found');
 
     return this.prisma.customer.update({
@@ -89,7 +109,9 @@ export class CustomerService {
         phoneNumber: input.phoneNumber.trim(),
         email: input.email,
         address: input.address,
-        debtLimit: input.debtLimit ? new Decimal(input.debtLimit) : customer.debtLimit,
+        debtLimit: input.debtLimit
+          ? new Decimal(input.debtLimit)
+          : customer.debtLimit,
       },
     });
   }
@@ -98,7 +120,9 @@ export class CustomerService {
    * Adjust debt repayment or store credit
    */
   async adjustBalance(input: AdjustCreditOrDebtInput): Promise<Customer> {
-    const customer = await this.prisma.customer.findUnique({ where: { id: input.customerId } });
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: input.customerId },
+    });
     if (!customer) throw new NotFoundException('Customer not found');
 
     const amountDecimal = new Decimal(input.amount);

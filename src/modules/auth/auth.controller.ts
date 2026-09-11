@@ -7,10 +7,14 @@ import {
   Post,
   Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { User, UserRole } from 'src/generated/prisma';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { User } from 'src/generated/prisma';
 import { Public } from 'src/common/decorators/public.decorator';
-import { Roles } from 'src/common/decorators/roles.decorator';
 import {
   CreateNewPasswordInput,
   ForgotPasswordInput,
@@ -18,7 +22,6 @@ import {
   LoginResponseDTO,
   PinLoginInput,
   RefreshTokenInput,
-  ResetPasswordInput,
   SetPinInput,
   UpdatePasswordInput,
   VerifyManagerPinInput,
@@ -37,7 +40,11 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'User login with Email and Password' })
-  @ApiResponse({ status: 200, description: 'User successfully logged in.', type: LoginResponseDTO })
+  @ApiResponse({
+    status: 200,
+    description: 'User successfully logged in.',
+    type: LoginResponseDTO,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @Post('/login')
   signIn(@Body() input: LoginRequestInput): Promise<LoginResponseDTO> {
@@ -50,7 +57,11 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Cashier / Staff fast login with 4-digit PIN' })
-  @ApiResponse({ status: 200, description: 'Staff successfully authenticated.', type: LoginResponseDTO })
+  @ApiResponse({
+    status: 200,
+    description: 'Staff successfully authenticated.',
+    type: LoginResponseDTO,
+  })
   @ApiResponse({ status: 401, description: 'Invalid PIN or credentials.' })
   @Post('/pin-login')
   pinLogin(@Body() input: PinLoginInput): Promise<LoginResponseDTO> {
@@ -63,8 +74,15 @@ export class AuthController {
   @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
-  @ApiResponse({ status: 200, description: 'Tokens successfully refreshed.', type: LoginResponseDTO })
-  @ApiResponse({ status: 401, description: 'Invalid or expired refresh token.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Tokens successfully refreshed.',
+    type: LoginResponseDTO,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid or expired refresh token.',
+  })
   @Post('/refresh')
   refreshToken(@Body() input: RefreshTokenInput): Promise<LoginResponseDTO> {
     return this.authService.refreshToken(input);
@@ -76,7 +94,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('Authorization')
   @ApiOperation({ summary: 'Verify Manager PIN for POS overrides' })
-  @ApiResponse({ status: 200, description: 'Manager PIN verified successfully.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Manager PIN verified successfully.',
+  })
   @ApiResponse({ status: 403, description: 'Forbidden: Invalid manager PIN.' })
   @Post('/verify-manager-pin')
   verifyManagerPin(@Body() input: VerifyManagerPinInput, @Req() req: Request) {
@@ -104,7 +125,6 @@ export class AuthController {
   updatePassword(@Body() input: UpdatePasswordInput): Promise<User> {
     return this.authService.updatePassword(input);
   }
-
 
   // Reset password (User)
   @Public()

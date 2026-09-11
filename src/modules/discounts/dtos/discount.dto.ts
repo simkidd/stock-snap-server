@@ -6,7 +6,7 @@ import {
   IsOptional,
   IsString,
   Max,
-  Min
+  Min,
 } from 'class-validator';
 
 export class CreateDiscountInput {
@@ -37,5 +37,5 @@ export class CreateDiscountInput {
 
   @IsOptional()
   @IsString()
-  description: string
+  description: string;
 }

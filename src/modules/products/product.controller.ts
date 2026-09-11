@@ -9,7 +9,12 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Product, User, UserRole } from 'src/generated/prisma';
 import { Public } from 'src/common/decorators/public.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
@@ -44,8 +49,13 @@ export class ProductController {
   }
 
   @Public()
-  @ApiOperation({ summary: 'Get live Low Stock and Out of Stock alerts for dashboard' })
-  @ApiResponse({ status: 200, description: 'Return low stock & out of stock products.' })
+  @ApiOperation({
+    summary: 'Get live Low Stock and Out of Stock alerts for dashboard',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Return low stock & out of stock products.',
+  })
   @Get('alerts/low-stock')
   getLowStockAlerts(@Req() req: Request) {
     const tenantId = req['user']?.tenantId;
@@ -75,7 +85,9 @@ export class ProductController {
 
   @ApiBearerAuth('Authorization')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.INVENTORY_CONTROLLER)
-  @ApiOperation({ summary: 'Create a new product with barcode and Naira pricing' })
+  @ApiOperation({
+    summary: 'Create a new product with barcode and Naira pricing',
+  })
   @ApiResponse({ status: 201, description: 'Product created successfully.' })
   @Post('/create')
   createProduct(
@@ -83,7 +95,11 @@ export class ProductController {
     @Req() req: Request,
   ): Promise<Product> {
     const user = req['user'] as User;
-    return this.productService.createProduct(input, user.id, user.tenantId ?? undefined);
+    return this.productService.createProduct(
+      input,
+      user.id,
+      user.tenantId ?? undefined,
+    );
   }
 
   @ApiBearerAuth('Authorization')

@@ -1,13 +1,25 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class CreateCustomerInput {
-  @ApiProperty({ example: 'Chief Emeka Okoye', description: 'Customer Full Name' })
+  @ApiProperty({
+    example: 'Chief Emeka Okoye',
+    description: 'Customer Full Name',
+  })
   @IsNotEmpty()
   @IsString()
   name: string;
 
-  @ApiProperty({ example: '08035551234', description: 'Phone number (unique customer lookup key)' })
+  @ApiProperty({
+    example: '08035551234',
+    description: 'Phone number (unique customer lookup key)',
+  })
   @IsNotEmpty()
   @IsString()
   phoneNumber: string;
@@ -22,7 +34,10 @@ export class CreateCustomerInput {
   @IsString()
   address?: string;
 
-  @ApiPropertyOptional({ example: 50000, description: 'Maximum allowed credit/debt limit in ₦' })
+  @ApiPropertyOptional({
+    example: 50000,
+    description: 'Maximum allowed credit/debt limit in ₦',
+  })
   @IsOptional()
   @IsNumber()
   debtLimit?: number;
@@ -46,7 +61,10 @@ export class AdjustCreditOrDebtInput {
   @Min(1)
   amount: number;
 
-  @ApiProperty({ example: 'REPAY_DEBT', enum: ['REPAY_DEBT', 'ADD_STORE_CREDIT', 'DEDUCT_STORE_CREDIT'] })
+  @ApiProperty({
+    example: 'REPAY_DEBT',
+    enum: ['REPAY_DEBT', 'ADD_STORE_CREDIT', 'DEDUCT_STORE_CREDIT'],
+  })
   @IsNotEmpty()
   @IsString()
   action: 'REPAY_DEBT' | 'ADD_STORE_CREDIT' | 'DEDUCT_STORE_CREDIT';

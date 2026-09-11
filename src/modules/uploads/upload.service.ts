@@ -30,10 +30,7 @@ export class UploadService {
       try {
         const result = await uploadImage(file, {
           folder: `stock_snap/${sanitizedFolder}`,
-          transformation: [
-            { quality: 'auto' },
-            { fetch_format: 'auto' },
-          ],
+          transformation: [{ quality: 'auto' }, { fetch_format: 'auto' }],
         });
 
         const uploaded: UploadedFileResponse = {

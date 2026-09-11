@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+} from 'class-validator';
 
 export class OpenShiftInput {
   @ApiProperty({ example: 'reg_cuid', description: 'Register ID' })
@@ -7,7 +13,10 @@ export class OpenShiftInput {
   @IsString()
   registerId: string;
 
-  @ApiProperty({ example: 10000, description: 'Starting cash float in drawer in ₦' })
+  @ApiProperty({
+    example: 10000,
+    description: 'Starting cash float in drawer in ₦',
+  })
   @IsNumber()
   @Min(0)
   openingFloat: number;
@@ -19,12 +28,18 @@ export class OpenShiftInput {
 }
 
 export class CloseShiftInput {
-  @ApiProperty({ example: 'session_cuid', description: 'Active Register Session ID' })
+  @ApiProperty({
+    example: 'session_cuid',
+    description: 'Active Register Session ID',
+  })
   @IsNotEmpty()
   @IsString()
   sessionId: string;
 
-  @ApiProperty({ example: 45000, description: 'Physical cash counted at end of shift in ₦' })
+  @ApiProperty({
+    example: 45000,
+    description: 'Physical cash counted at end of shift in ₦',
+  })
   @IsNumber()
   @Min(0)
   closingCash: number;
