@@ -2,12 +2,9 @@ name: Deploy Database Migrations
 
 on:
   push:
-    branches:
-      - main
+    branches: [main, dev]
   pull_request:
-    types: [closed]
-    branches:
-      - main
+    branches: [main, dev]
 
 jobs:
   deploy:
@@ -18,33 +15,26 @@ jobs:
       DIRECT_URL: ${{ secrets.PROD_DIRECT_URL }}
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Node.js 22 environment with Yarn caching
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: "yarn"
 
-      # Step 3: Install dependencies using Yarn
-      - name: Install Dependencies
-        run: yarn install
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
 
-      # Step 4: Generate Prisma Client
       - name: Generate Prisma Client
         run: yarn prisma:generate
 
-      # Step 5: Run Linter
       - name: Run Linter
         run: yarn lint
 
-      # Step 6: Run Build
       - name: Run Build
         run: yarn build
 
-      # Step 7: Apply all pending migrations to the database
       - name: Apply Database Migrations
         run: yarn prisma migrate deploy
