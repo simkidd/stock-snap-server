@@ -1,8 +1,17 @@
 import { Body, Controller, Get, Param, Patch, Post, Req } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
 import { CustomerService } from './customer.service';
-import { AdjustCreditOrDebtInput, CreateCustomerInput, UpdateCustomerInput } from './dtos/customer.dto';
+import {
+  AdjustCreditOrDebtInput,
+  CreateCustomerInput,
+  UpdateCustomerInput,
+} from './dtos/customer.dto';
 
 @ApiTags('customers')
 @Controller('customers')
@@ -19,11 +28,16 @@ export class CustomerController {
   }
 
   @Public()
-  @ApiOperation({ summary: 'Find customer by phone number (POS checkout lookup)' })
+  @ApiOperation({
+    summary: 'Find customer by phone number (POS checkout lookup)',
+  })
   @ApiResponse({ status: 200, description: 'Customer details returned.' })
   @ApiResponse({ status: 404, description: 'Customer not found.' })
   @Get('phone/:phoneNumber')
-  findByPhoneNumber(@Param('phoneNumber') phoneNumber: string, @Req() req: Request) {
+  findByPhoneNumber(
+    @Param('phoneNumber') phoneNumber: string,
+    @Req() req: Request,
+  ) {
     const tenantId = req['user']?.tenantId;
     return this.customerService.findByPhoneNumber(phoneNumber, tenantId);
   }

@@ -8,7 +8,12 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { User, UserRole } from 'src/generated/prisma';
 import { Request } from 'express';
 import { Public } from 'src/common/decorators/public.decorator';
@@ -28,7 +33,9 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Public()
-  @ApiOperation({ summary: 'Get all staff users with optional search & pagination' })
+  @ApiOperation({
+    summary: 'Get all staff users with optional search & pagination',
+  })
   @ApiResponse({ status: 200, description: 'Return list of users.' })
   @Get()
   getUsers(
@@ -43,7 +50,10 @@ export class UserController {
   }
 
   @ApiOperation({ summary: 'Get currently authenticated staff profile' })
-  @ApiResponse({ status: 200, description: 'Return authenticated user information.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return authenticated user information.',
+  })
   @Get('me')
   getMe(@Req() req: Request) {
     const user = req['user'];
@@ -84,8 +94,13 @@ export class UserController {
   }
 
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  @ApiOperation({ summary: 'Update staff status (Active, Inactive, Suspended)' })
-  @ApiResponse({ status: 200, description: 'User status updated successfully.' })
+  @ApiOperation({
+    summary: 'Update staff status (Active, Inactive, Suspended)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User status updated successfully.',
+  })
   @Patch('status/update')
   updateUserStatus(@Body() input: UpdateStatusInput): Promise<User> {
     return this.userService.updateUserStatus(input);

@@ -29,8 +29,12 @@ export class BrandService {
     return brand;
   }
 
-  async createBrand(input: CreateBrandInput, tenantId?: string): Promise<Brand> {
-    const resolvedTenantId = tenantId || (await this.prisma.tenant.findFirst())?.id;
+  async createBrand(
+    input: CreateBrandInput,
+    tenantId?: string,
+  ): Promise<Brand> {
+    const resolvedTenantId =
+      tenantId || (await this.prisma.tenant.findFirst())?.id;
     const name = input.name.trim();
     const slug = slugify(name);
 
@@ -44,7 +48,7 @@ export class BrandService {
     return this.prisma.brand.create({
       data: {
         ...input,
-        tenantId: resolvedTenantId as string,
+        tenantId: resolvedTenantId,
         name,
         slug,
       },

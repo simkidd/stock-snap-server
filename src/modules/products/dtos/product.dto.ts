@@ -13,7 +13,10 @@ export class CreateProductInput {
   @IsString()
   sku: string;
 
-  @ApiPropertyOptional({ example: '8901030382910', description: 'Barcode for USB/Bluetooth laser scanner' })
+  @ApiPropertyOptional({
+    example: '8901030382910',
+    description: 'Barcode for USB/Bluetooth laser scanner',
+  })
   @IsOptional()
   @IsString()
   barcode?: string;
@@ -41,7 +44,10 @@ export class CreateProductInput {
   @IsString()
   unit?: string;
 
-  @ApiPropertyOptional({ example: 1, description: 'Pieces per carton/pack (break-bulk)' })
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'Pieces per carton/pack (break-bulk)',
+  })
   @IsOptional()
   @IsInt()
   piecesPerPack?: number;
@@ -57,12 +63,17 @@ export class CreateProductInput {
   @IsString()
   brandId?: string;
 
-  @ApiPropertyOptional({ example: 'Nestle Golden Morn Maize & Soya Protein 1kg' })
+  @ApiPropertyOptional({
+    example: 'Nestle Golden Morn Maize & Soya Protein 1kg',
+  })
   @IsOptional()
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ example: 3800, description: 'Cost price in Naira (₦)' })
+  @ApiPropertyOptional({
+    example: 3800,
+    description: 'Cost price in Naira (₦)',
+  })
   @IsOptional()
   @IsNumber()
   costPrice?: number;
@@ -79,16 +90,25 @@ export class CreateProductInput {
   @IsInt()
   minimumQuantity: number;
 
-  @ApiPropertyOptional({ example: false, description: 'Is item exempt from 7.5% VAT (e.g. drugs/raw food)' })
+  @ApiPropertyOptional({
+    example: false,
+    description: 'Is item exempt from 7.5% VAT (e.g. drugs/raw food)',
+  })
   @IsOptional()
   @IsBoolean()
   isTaxExempt?: boolean;
 
-  @ApiProperty({ example: 'category-id', description: 'Category or Sub-Category ID' })
+  @ApiProperty({
+    example: 'category-id',
+    description: 'Category or Sub-Category ID',
+  })
   @IsString()
   categoryId: string;
 
-  @ApiPropertyOptional({ example: 'category-id', description: 'Legacy alias for categoryId' })
+  @ApiPropertyOptional({
+    example: 'category-id',
+    description: 'Legacy alias for categoryId',
+  })
   @IsOptional()
   @IsString()
   productCategoryId?: string;

@@ -40,7 +40,10 @@ export class ProductService {
     return product;
   }
 
-  async getProductByBarcode(barcode: string, tenantId?: string): Promise<Product> {
+  async getProductByBarcode(
+    barcode: string,
+    tenantId?: string,
+  ): Promise<Product> {
     const product = await this.prisma.product.findFirst({
       where: {
         barcode: barcode.trim(),
@@ -133,7 +136,9 @@ export class ProductService {
       where: { sku: input.sku, tenantId: resolvedTenantId },
     });
     if (existingSku) {
-      throw new BadRequestException(`Product with SKU "${input.sku}" already exists`);
+      throw new BadRequestException(
+        `Product with SKU "${input.sku}" already exists`,
+      );
     }
 
     let status: ProductStatusEnum = ProductStatusEnum.AVAILABLE;
@@ -149,8 +154,8 @@ export class ProductService {
     const product = await this.prisma.product.create({
       data: {
         ...restInput,
-        categoryId: categoryId as string,
-        tenantId: resolvedTenantId as string,
+        categoryId: categoryId,
+        tenantId: resolvedTenantId,
         name,
         slug,
         status,
@@ -232,7 +237,8 @@ export class ProductService {
       });
     } else if (
       product.quantity > product.minimumQuantity &&
-      (product.status === ProductStatusEnum.LOW || product.status === ProductStatusEnum.OUT)
+      (product.status === ProductStatusEnum.LOW ||
+        product.status === ProductStatusEnum.OUT)
     ) {
       await this.prisma.product.update({
         where: { id: product.id },

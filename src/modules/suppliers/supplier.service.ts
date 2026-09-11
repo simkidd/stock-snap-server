@@ -30,8 +30,12 @@ export class SupplierService {
     return supplier;
   }
 
-  async createSupplier(input: CreateSupplierInput, tenantId?: string): Promise<Supplier> {
-    const resolvedTenantId = tenantId || (await this.prisma.tenant.findFirst())?.id;
+  async createSupplier(
+    input: CreateSupplierInput,
+    tenantId?: string,
+  ): Promise<Supplier> {
+    const resolvedTenantId =
+      tenantId || (await this.prisma.tenant.findFirst())?.id;
     const name = input.name.trim();
     const slug = slugify(name);
 
@@ -45,7 +49,7 @@ export class SupplierService {
     return this.prisma.supplier.create({
       data: {
         ...input,
-        tenantId: resolvedTenantId as string,
+        tenantId: resolvedTenantId,
         name,
         slug,
       },

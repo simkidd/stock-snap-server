@@ -14,18 +14,27 @@ import {
 import { Type } from 'class-transformer';
 
 export class SaleItemInput {
-  @ApiProperty({ description: 'ID of the product being sold', example: 'prod_cuid' })
+  @ApiProperty({
+    description: 'ID of the product being sold',
+    example: 'prod_cuid',
+  })
   @IsNotEmpty()
   @IsString()
   productId: string;
 
-  @ApiProperty({ description: 'Quantity of the product being sold', example: 2 })
+  @ApiProperty({
+    description: 'Quantity of the product being sold',
+    example: 2,
+  })
   @IsNotEmpty()
   @IsInt()
   @Min(1)
   quantity: number;
 
-  @ApiPropertyOptional({ description: 'Unit price override (optional)', example: 4500 })
+  @ApiPropertyOptional({
+    description: 'Unit price override (optional)',
+    example: 4500,
+  })
   @IsOptional()
   @IsNumber()
   unitPrice?: number;
@@ -46,22 +55,34 @@ export class PaymentTransactionInput {
   @Min(0)
   amount: number;
 
-  @ApiPropertyOptional({ example: 'GTBank / OPay', description: 'Bank name for Bank Transfer' })
+  @ApiPropertyOptional({
+    example: 'GTBank / OPay',
+    description: 'Bank name for Bank Transfer',
+  })
   @IsOptional()
   @IsString()
   bankName?: string;
 
-  @ApiPropertyOptional({ example: 'SESSION-92830192', description: 'Session ID or Transfer Ref' })
+  @ApiPropertyOptional({
+    example: 'SESSION-92830192',
+    description: 'Session ID or Transfer Ref',
+  })
   @IsOptional()
   @IsString()
   transferReference?: string;
 
-  @ApiPropertyOptional({ example: 'Moniepoint POS 1', description: 'POS Terminal Name' })
+  @ApiPropertyOptional({
+    example: 'Moniepoint POS 1',
+    description: 'POS Terminal Name',
+  })
   @IsOptional()
   @IsString()
   posTerminalName?: string;
 
-  @ApiPropertyOptional({ example: '000982341', description: 'RRN Number from POS receipt' })
+  @ApiPropertyOptional({
+    example: '000982341',
+    description: 'RRN Number from POS receipt',
+  })
   @IsOptional()
   @IsString()
   posRrnNumber?: string;
@@ -73,25 +94,36 @@ export class PaymentTransactionInput {
 }
 
 export class CreateSaleInput {
-  @ApiProperty({ type: [SaleItemInput], description: 'List of items in the sale' })
+  @ApiProperty({
+    type: [SaleItemInput],
+    description: 'List of items in the sale',
+  })
   @IsNotEmpty()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => SaleItemInput)
   items: SaleItemInput[];
 
-  @ApiProperty({ enum: PaymentMethodEnum, example: PaymentMethodEnum.CASH, description: 'Primary payment method or SPLIT' })
+  @ApiProperty({
+    enum: PaymentMethodEnum,
+    example: PaymentMethodEnum.CASH,
+    description: 'Primary payment method or SPLIT',
+  })
   @IsEnum(PaymentMethodEnum)
   paymentMethod: PaymentMethodEnum;
 
-  @ApiPropertyOptional({ example: 20000, description: 'Total Cash tendered by customer' })
+  @ApiPropertyOptional({
+    example: 20000,
+    description: 'Total Cash tendered by customer',
+  })
   @IsOptional()
   @IsNumber()
   amountTendered?: number;
 
   @ApiPropertyOptional({
     type: [PaymentTransactionInput],
-    description: 'Split payment details (when paying via multiple methods like Cash + Transfer)',
+    description:
+      'Split payment details (when paying via multiple methods like Cash + Transfer)',
   })
   @IsOptional()
   @IsArray()
@@ -99,17 +131,26 @@ export class CreateSaleInput {
   @Type(() => PaymentTransactionInput)
   payments?: PaymentTransactionInput[];
 
-  @ApiPropertyOptional({ example: 'cust_cuid', description: 'Customer ID for loyalty/debt' })
+  @ApiPropertyOptional({
+    example: 'cust_cuid',
+    description: 'Customer ID for loyalty/debt',
+  })
   @IsOptional()
   @IsString()
   customerId?: string;
 
-  @ApiPropertyOptional({ example: 'session_cuid', description: 'Active Cashier Register Shift Session' })
+  @ApiPropertyOptional({
+    example: 'session_cuid',
+    description: 'Active Cashier Register Shift Session',
+  })
   @IsOptional()
   @IsString()
   registerSessionId?: string;
 
-  @ApiPropertyOptional({ description: 'Discount code (e.g. PROMO10)', example: 'PROMO10' })
+  @ApiPropertyOptional({
+    description: 'Discount code (e.g. PROMO10)',
+    example: 'PROMO10',
+  })
   @IsOptional()
   @IsString()
   discountCode?: string;
@@ -119,7 +160,10 @@ export class CreateSaleInput {
   @IsString()
   note?: string;
 
-  @ApiPropertyOptional({ description: 'Point of Sale number or desk ID', example: 'REG-01' })
+  @ApiPropertyOptional({
+    description: 'Point of Sale number or desk ID',
+    example: 'REG-01',
+  })
   @IsOptional()
   @IsString()
   posNumber?: string;

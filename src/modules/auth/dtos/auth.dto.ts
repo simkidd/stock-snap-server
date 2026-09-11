@@ -27,12 +27,18 @@ export class LoginRequestInput {
 }
 
 export class PinLoginInput {
-  @ApiProperty({ example: 'cashier@stocksnap.ng', description: 'Staff Email or username' })
+  @ApiProperty({
+    example: 'cashier@stocksnap.ng',
+    description: 'Staff Email or username',
+  })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ example: '0000', description: '4-digit Cashier/Manager PIN code' })
+  @ApiProperty({
+    example: '0000',
+    description: '4-digit Cashier/Manager PIN code',
+  })
   @IsString()
   @IsNotEmpty()
   @Length(4, 6, { message: 'PIN must be between 4 and 6 digits' })
@@ -50,7 +56,10 @@ export class RefreshTokenInput {
 }
 
 export class VerifyManagerPinInput {
-  @ApiProperty({ example: '9999', description: '4-digit Manager PIN code for overrides/refunds' })
+  @ApiProperty({
+    example: '9999',
+    description: '4-digit Manager PIN code for overrides/refunds',
+  })
   @IsString()
   @IsNotEmpty()
   @Length(4, 6, { message: 'PIN must be between 4 and 6 digits' })

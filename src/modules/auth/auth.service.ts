@@ -37,7 +37,9 @@ export class AuthService {
   ) {}
 
   // Helper to generate access & refresh tokens
-  private async generateTokens(user: User): Promise<{ token: string; refreshToken: string }> {
+  private async generateTokens(
+    user: User,
+  ): Promise<{ token: string; refreshToken: string }> {
     const payload = {
       id: user.id,
       email: user.email,
@@ -48,8 +50,14 @@ export class AuthService {
     };
 
     const [token, refreshToken] = await Promise.all([
-      this.jwtService.signAsync({ ...payload, tokenType: 'access' }, { expiresIn: '24h' }),
-      this.jwtService.signAsync({ id: user.id, tokenType: 'refresh' }, { expiresIn: '7d' }),
+      this.jwtService.signAsync(
+        { ...payload, tokenType: 'access' },
+        { expiresIn: '24h' },
+      ),
+      this.jwtService.signAsync(
+        { id: user.id, tokenType: 'refresh' },
+        { expiresIn: '7d' },
+      ),
     ]);
 
     return { token, refreshToken };
@@ -62,7 +70,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const isMatch = await this.comparePassword(user.auth.password, input.password);
+    const isMatch = await this.comparePassword(
+      user.auth.password,
+      input.password,
+    );
     if (!isMatch) {
       throw new UnauthorizedException('Invalid email or password');
     }
@@ -88,7 +99,9 @@ export class AuthService {
     }
 
     if (!user.auth?.pinCode) {
-      throw new BadRequestException('PIN code not set for this account. Please log in with password first.');
+      throw new BadRequestException(
+        'PIN code not set for this account. Please log in with password first.',
+      );
     }
 
     const isMatch = await bcrypt.compare(input.pin, user.auth.pinCode);
@@ -110,7 +123,9 @@ export class AuthService {
   }
 
   // Refresh expired access token with valid refresh token
-  async refreshToken(input: { refreshToken: string }): Promise<LoginResponseDTO> {
+  async refreshToken(input: {
+    refreshToken: string;
+  }): Promise<LoginResponseDTO> {
     try {
       const payload = await this.jwtService.verifyAsync(input.refreshToken, {
         secret: config.JWT_SECRET,
@@ -122,7 +137,9 @@ export class AuthService {
 
       const user = await this.userService.findUser(payload.id);
       if (!user || user.status !== 'ACTIVE') {
-        throw new UnauthorizedException('User account is inactive or not found');
+        throw new UnauthorizedException(
+          'User account is inactive or not found',
+        );
       }
 
       const tokens = await this.generateTokens(user);
@@ -176,7 +193,10 @@ export class AuthService {
   }
 
   // Set or update 4-digit PIN for staff
-  async setPin(userId: string, input: SetPinInput): Promise<{ message: string }> {
+  async setPin(
+    userId: string,
+    input: SetPinInput,
+  ): Promise<{ message: string }> {
     const hashedPin = await bcrypt.hash(input.pin, 10);
     await this.prisma.auth.upsert({
       where: { userId },
