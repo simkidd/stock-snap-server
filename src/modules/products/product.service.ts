@@ -149,7 +149,7 @@ export class ProductService {
     }
 
     const categoryId = input.categoryId || input.productCategoryId;
-    const { productCategoryId, ...restInput } = input;
+    const { productCategoryId: _productCategoryId, ...restInput } = input;
 
     const product = await this.prisma.product.create({
       data: {
@@ -186,7 +186,7 @@ export class ProductService {
     const slug = slugify(name);
 
     const categoryId = input.categoryId || input.productCategoryId;
-    const { productCategoryId, ...restInput } = input;
+    const { productCategoryId: _productCategoryId, ...restInput } = input;
 
     const product = await this.prisma.product.update({
       where: { id: input.id },

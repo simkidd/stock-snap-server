@@ -42,8 +42,10 @@ export class UploadService {
         };
         return uploaded;
       } catch (error) {
+        const errorMsg =
+          error instanceof Error ? error.message : 'Unknown error';
         throw new InternalServerErrorException(
-          `Failed to upload ${file.originalname}: ${error.message}`,
+          `Failed to upload ${file.originalname}: ${errorMsg}`,
         );
       }
     });
@@ -68,8 +70,9 @@ export class UploadService {
       await deleteImage(publicId);
       return { message: `Asset "${publicId}" deleted successfully` };
     } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       throw new InternalServerErrorException(
-        `Failed to delete asset: ${error.message}`,
+        `Failed to delete asset: ${errorMsg}`,
       );
     }
   }
