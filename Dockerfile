@@ -1,57 +1,54 @@
 # ==============================================================================
-# Stage 1: Builder (Dependencies & Build)
+# Stage 1: Build & Compile
 # ==============================================================================
 FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Install system dependencies required for Prisma engine compilation on Alpine
+# Install system dependencies needed for Prisma engines and native modules on Alpine
 RUN apk add --no-cache openssl libc6-compat
 
-# Copy package manifests & install all dependencies
+# Copy package manifests & install dependencies
 COPY package.json yarn.lock ./
-RUN yarn install
+RUN yarn install --frozen-lockfile
 
-# Copy Prisma schema and configuration
+# Copy application source & configurations
+COPY tsconfig*.json nest-cli.json prisma.config.ts eslint.config.mjs ./
 COPY prisma ./prisma
-COPY prisma.config.ts ./
-
-# Generate Prisma Client
-RUN yarn prisma generate
-
-# Copy project source and TypeScript configurations
-COPY tsconfig*.json nest-cli.json ./
 COPY src ./src
 
-# Compile application to dist/ (dist/main.js)
+# Generate Prisma Client and compile NestJS to dist/
+RUN yarn prisma:generate
 RUN yarn build
 
-# Prune dev-dependencies to keep image lightweight for Render
+# Remove development dependencies to keep the production footprint minimal & fast
 RUN yarn install --production --ignore-scripts --prefer-offline
 
 # ==============================================================================
-# Stage 2: Production Runner
+# Stage 2: Production Runtime
 # ==============================================================================
 FROM node:22-alpine AS runner
 
 WORKDIR /app
 
-# Install OpenSSL for Prisma and dumb-init for graceful shutdown on Render
-RUN apk add --no-cache openssl dumb-init
+# Install OpenSSL for Prisma runtime queries & dumb-init for graceful shutdown signals
+RUN apk add --no-cache openssl libc6-compat dumb-init
 
+# Set production environment variables
 ENV NODE_ENV=production
 ENV PORT=8080
 
 # Run container as non-root user for security
 USER node
 
-# Copy built application and production dependencies from builder stage
+# Copy production artifacts from builder stage
 COPY --chown=node:node --from=builder /app/package.json ./package.json
 COPY --chown=node:node --from=builder /app/node_modules ./node_modules
 COPY --chown=node:node --from=builder /app/dist ./dist
 COPY --chown=node:node --from=builder /app/prisma ./prisma
 COPY --chown=node:node --from=builder /app/src/generated ./src/generated
 
+# Expose the default application port (Render overrides with its own PORT env)
 EXPOSE 8080
 
 # Handle PID 1 signals (Render zero-downtime deploys & graceful shutdowns)
