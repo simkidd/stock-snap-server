@@ -39,7 +39,7 @@ export class AuthService {
   // Helper to generate access & refresh tokens
   private async generateTokens(
     user: User,
-  ): Promise<{ token: string; refreshToken: string }> {
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     const payload = {
       id: user.id,
       email: user.email,
@@ -49,18 +49,28 @@ export class AuthService {
       storeId: user.storeId,
     };
 
-    const [token, refreshToken] = await Promise.all([
+    const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(
         { ...payload, tokenType: 'access' },
-        { expiresIn: '24h' },
+        { secret: config.JWT.SECRET, expiresIn: config.JWT.SIGN_IN_EXPIRY as any },
       ),
       this.jwtService.signAsync(
         { id: user.id, tokenType: 'refresh' },
-        { expiresIn: '7d' },
+        { secret: config.JWT.REFRESH_SECRET, expiresIn: config.JWT.REFRESH_EXPIRY as any },
       ),
     ]);
 
-    return { token, refreshToken };
+    // Store hashed refresh token in DB for server-side revocation & validation
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    await this.prisma.auth.updateMany({
+      where: { userId: user.id },
+      data: {
+        refreshToken: hashedRefreshToken,
+        lastLoginAt: new Date(),
+      },
+    });
+
+    return { accessToken, refreshToken };
   }
 
   // Standard email + password login
@@ -79,15 +89,11 @@ export class AuthService {
     }
 
     const tokens = await this.generateTokens(user);
+    const { auth: _, ...userWithoutAuth } = user as any;
 
     return {
       ...tokens,
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      tenantId: user.tenantId ?? undefined,
-      storeId: user.storeId ?? undefined,
+      user: userWithoutAuth,
     };
   }
 
@@ -110,15 +116,11 @@ export class AuthService {
     }
 
     const tokens = await this.generateTokens(user);
+    const { auth: _, ...userWithoutAuth } = user as any;
 
     return {
       ...tokens,
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      tenantId: user.tenantId ?? undefined,
-      storeId: user.storeId ?? undefined,
+      user: userWithoutAuth,
     };
   }
 
@@ -128,7 +130,7 @@ export class AuthService {
   }): Promise<LoginResponseDTO> {
     try {
       const payload = await this.jwtService.verifyAsync(input.refreshToken, {
-        secret: config.JWT_SECRET,
+        secret: config.JWT.REFRESH_SECRET,
       });
 
       if (payload.tokenType !== 'refresh') {
@@ -142,16 +144,24 @@ export class AuthService {
         );
       }
 
+      if (!user.auth?.refreshToken) {
+        throw new UnauthorizedException('Session expired or logged out');
+      }
+
+      const isMatch = await bcrypt.compare(
+        input.refreshToken,
+        user.auth.refreshToken,
+      );
+      if (!isMatch) {
+        throw new UnauthorizedException('Invalid or revoked refresh token');
+      }
+
       const tokens = await this.generateTokens(user);
+      const { auth: _, ...userWithoutAuth } = user as any;
 
       return {
         ...tokens,
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        tenantId: user.tenantId ?? undefined,
-        storeId: user.storeId ?? undefined,
+        user: userWithoutAuth,
       };
     } catch (e) {
       if (e instanceof UnauthorizedException) {
@@ -343,5 +353,27 @@ export class AuthService {
     } catch (e) {
       console.warn('Could not send password reset email:', e);
     }
+  }
+
+  // Logout: Revoke stored refresh token in DB
+  async logout(
+    userId?: string,
+  ): Promise<{ success: boolean; message: string }> {
+    if (userId) {
+      await this.prisma.auth.updateMany({
+        where: { userId },
+        data: { refreshToken: null },
+      });
+    }
+
+    return {
+      success: true,
+      message: 'Logged out successfully',
+    };
+  }
+
+  // Get current user profile
+  async getMe(userId: string): Promise<User> {
+    return this.userService.getMe(userId);
   }
 }

@@ -19,7 +19,6 @@ model Tenant {
   name               String              // e.g. "StockSnap Supermarket"
   slug               String              @unique
   currency           String              @default("NGN")
-  currencySymbol     String              @default("₦")
   phone              String?
   email              String?
   address            String?             // e.g. "Peter Odili Road"

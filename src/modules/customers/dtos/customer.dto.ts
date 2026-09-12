@@ -74,3 +74,27 @@ export class AdjustCreditOrDebtInput {
   @IsString()
   note?: string;
 }
+
+export class QueryCustomerDto {
+  @ApiPropertyOptional({ default: 1, minimum: 1 })
+  @IsOptional()
+  page?: number;
+
+  @ApiPropertyOptional({ default: 20, minimum: 1, maximum: 100 })
+  @IsOptional()
+  limit?: number;
+
+  @ApiPropertyOptional({ description: 'Search name, phone number, or email' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ description: 'Filter only customers with active debt' })
+  @IsOptional()
+  hasDebt?: boolean;
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'], default: 'desc' })
+  @IsOptional()
+  @IsString()
+  sortOrder?: 'asc' | 'desc';
+}

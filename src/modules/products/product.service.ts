@@ -3,25 +3,64 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Product, ProductStatusEnum } from 'src/generated/prisma';
+import { Prisma, Product, ProductStatusEnum } from 'src/generated/prisma';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { slugify } from 'src/utils/helpers';
-import { CreateProductInput, UpdateProductInput } from './dtos/product.dto';
+import {
+  buildPaginationMeta,
+  calculatePagination,
+} from 'src/common/utils/paginate.util';
+import {
+  CreateProductInput,
+  QueryProductDto,
+  UpdateProductInput,
+} from './dtos/product.dto';
 
 @Injectable()
 export class ProductService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getAllProducts(tenantId?: string): Promise<Product[]> {
-    return this.prisma.product.findMany({
-      where: tenantId ? { tenantId } : {},
-      include: {
-        images: true,
-        category: true,
-        brand: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+  async getAllProducts(
+    tenantId?: string,
+    query?: QueryProductDto,
+  ) {
+    const { page, limit, skip } = calculatePagination(query);
+
+    const where: Prisma.ProductWhereInput = {
+      ...(tenantId ? { tenantId } : {}),
+      ...(query?.categoryId ? { categoryId: query.categoryId } : {}),
+      ...(query?.brandId ? { brandId: query.brandId } : {}),
+      ...(query?.status ? { status: query.status } : {}),
+      ...(query?.search
+        ? {
+            OR: [
+              { name: { contains: query.search, mode: 'insensitive' } },
+              { barcode: { contains: query.search, mode: 'insensitive' } },
+              { sku: { contains: query.search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+
+    const [total, data] = await Promise.all([
+      this.prisma.product.count({ where }),
+      this.prisma.product.findMany({
+        where,
+        include: {
+          images: true,
+          category: true,
+          brand: true,
+        },
+        skip,
+        take: limit,
+        orderBy: { createdAt: query?.sortOrder === 'asc' ? 'asc' : 'desc' },
+      }),
+    ]);
+
+    return {
+      data,
+      meta: buildPaginationMeta(total, page, limit),
+    };
   }
 
   async getProductById(id: string): Promise<Product> {
@@ -93,7 +132,10 @@ export class ProductService {
 
   async searchProducts(query: string, tenantId?: string): Promise<Product[]> {
     const cleanQuery = query?.trim();
-    if (!cleanQuery) return this.getAllProducts(tenantId);
+    if (!cleanQuery) {
+      const result = await this.getAllProducts(tenantId, { limit: 50 });
+      return result.data;
+    }
 
     return this.prisma.product.findMany({
       where: {
@@ -111,6 +153,7 @@ export class ProductService {
         brand: true,
       },
       take: 50,
+      orderBy: { createdAt: 'desc' },
     });
   }
 

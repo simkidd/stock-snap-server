@@ -59,7 +59,7 @@ export class UserService {
   async findUser(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: { auth: true },
+      include: { auth: true, store: true, tenant: true },
     });
     if (!user) {
       throw new NotFoundException('User id not found');
@@ -70,7 +70,7 @@ export class UserService {
   async getUserByEmail(email: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
-      include: { auth: true },
+      include: { auth: true, store: true, tenant: true },
     });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -119,7 +119,7 @@ export class UserService {
   async decodeJWT(token: string): Promise<User | null> {
     if (!token) return null;
     try {
-      const { id } = verify(token, config.JWT_SECRET) as { id: string };
+      const { id } = verify(token, config.JWT.SECRET) as { id: string };
       return await this.getUserById(id);
     } catch (_error) {
       console.error('Invalid signature on decodeJWT');
@@ -130,6 +130,10 @@ export class UserService {
   async getMe(id: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id },
+      include: {
+        store: true,
+        tenant: true,
+      },
     });
     if (!user) {
       throw new NotFoundException('User not found');

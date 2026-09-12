@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import {
   ApiBearerAuth,
@@ -9,7 +9,7 @@ import {
 import { Public } from 'src/common/decorators/public.decorator';
 import { Sales, UserRole } from 'src/generated/prisma';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { CreateSaleInput } from './dtos/sales.dto';
+import { CreateSaleInput, QuerySalesDto } from './dtos/sales.dto';
 
 @ApiTags('sales')
 @Controller('sales')
@@ -17,12 +17,15 @@ export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
   @Public()
-  @ApiOperation({ summary: 'Get all sales records' })
-  @ApiResponse({ status: 200, description: 'Return all Sales.' })
+  @ApiOperation({ summary: 'Get all sales records with pagination & filters' })
+  @ApiResponse({ status: 200, description: 'Return paginated sales.' })
   @Get()
-  getAllSales(@Req() req: Request): Promise<Sales[]> {
+  getAllSales(
+    @Req() req: Request,
+    @Query() query: QuerySalesDto,
+  ) {
     const tenantId = req['user']?.tenantId;
-    return this.salesService.getAllSales(tenantId);
+    return this.salesService.getAllSales(tenantId, query);
   }
 
   @Public()

@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole } from 'src/generated/prisma';
+import { UserRole, UserStatusEnum } from 'src/generated/prisma';
 import {
   IsString,
   IsEmail,
@@ -8,6 +8,7 @@ import {
   Matches,
   IsOptional,
   Length,
+  IsEnum,
 } from 'class-validator';
 
 export class CreatePasswordInput {
@@ -74,16 +75,7 @@ export class SetPinInput {
   pin: string;
 }
 
-export class LoginResponseDTO {
-  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
-  @IsString()
-  token: string;
-
-  @ApiPropertyOptional({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
-  @IsOptional()
-  @IsString()
-  refreshToken?: string;
-
+export class AuthUserDTO {
   @ApiProperty({ example: 'user_cuid' })
   @IsString()
   id: string;
@@ -96,9 +88,18 @@ export class LoginResponseDTO {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ example: UserRole.CASHIER })
-  @IsString()
+  @ApiProperty({ example: UserRole.CASHIER, enum: UserRole })
+  @IsEnum(UserRole)
   role: UserRole;
+
+  @ApiProperty({ example: UserStatusEnum.ACTIVE, enum: UserStatusEnum })
+  @IsEnum(UserStatusEnum)
+  status: UserStatusEnum;
+
+  @ApiPropertyOptional({ example: '+2348012345678' })
+  @IsOptional()
+  @IsString()
+  phoneNumber?: string;
 
   @ApiPropertyOptional({ example: 'tenant_cuid' })
   @IsOptional()
@@ -109,6 +110,20 @@ export class LoginResponseDTO {
   @IsOptional()
   @IsString()
   storeId?: string;
+}
+
+export class LoginResponseDTO {
+  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
+  @IsString()
+  accessToken: string;
+
+  @ApiPropertyOptional({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
+  @IsOptional()
+  @IsString()
+  refreshToken?: string;
+
+  @ApiProperty({ type: () => AuthUserDTO })
+  user: AuthUserDTO;
 }
 
 export class UpdatePasswordInput {

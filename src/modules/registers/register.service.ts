@@ -38,6 +38,24 @@ export class RegisterService {
     });
   }
 
+  async getActiveSession(
+    userId?: string,
+    tenantId?: string,
+  ): Promise<RegisterSession | null> {
+    return this.prisma.registerSession.findFirst({
+      where: {
+        status: SessionStatusEnum.OPEN,
+        ...(userId ? { cashierId: userId } : {}),
+        ...(tenantId ? { tenantId } : {}),
+      },
+      include: {
+        register: true,
+        cashier: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { openedAt: 'desc' },
+    });
+  }
+
   async createRegister(
     input: CreateRegisterInput,
     userId: string,
@@ -239,7 +257,6 @@ export class RegisterService {
             ? 'OVERAGE'
             : 'SHORTAGE',
         currency: 'NGN',
-        currencySymbol: '₦',
       },
     };
   }

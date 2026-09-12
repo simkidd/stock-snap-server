@@ -91,7 +91,6 @@ export const TenantScalarFieldEnum = {
   name: 'name',
   slug: 'slug',
   currency: 'currency',
-  currencySymbol: 'currencySymbol',
   phone: 'phone',
   email: 'email',
   address: 'address',

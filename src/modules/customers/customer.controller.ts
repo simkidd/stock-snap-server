@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -10,6 +10,7 @@ import { CustomerService } from './customer.service';
 import {
   AdjustCreditOrDebtInput,
   CreateCustomerInput,
+  QueryCustomerDto,
   UpdateCustomerInput,
 } from './dtos/customer.dto';
 
@@ -19,12 +20,15 @@ export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   @Public()
-  @ApiOperation({ summary: 'Get all customers' })
-  @ApiResponse({ status: 200, description: 'Return all customers.' })
+  @ApiOperation({ summary: 'Get all customers with pagination & search' })
+  @ApiResponse({ status: 200, description: 'Return paginated customers.' })
   @Get()
-  getAllCustomers(@Req() req: Request) {
+  getAllCustomers(
+    @Req() req: Request,
+    @Query() query: QueryCustomerDto,
+  ) {
     const tenantId = req['user']?.tenantId;
-    return this.customerService.getAllCustomers(tenantId);
+    return this.customerService.getAllCustomers(tenantId, query);
   }
 
   @Public()

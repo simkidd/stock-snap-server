@@ -40,7 +40,6 @@ async function main() {
       name: 'StockSnap Supermarket Ltd',
       slug: 'stocksnap-ph',
       currency: 'NGN',
-      currencySymbol: '₦',
       phone: '+234 803 123 4567',
       email: 'contact@stocksnap.ng',
       address: 'Plot 12, Peter Odili Road, Trans-Amadi',

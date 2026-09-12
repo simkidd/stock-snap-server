@@ -13,7 +13,11 @@ import {
 } from 'src/generated/prisma';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { generateInvoiceNo } from 'src/utils/helpers';
-import { CreateSaleInput } from './dtos/sales.dto';
+import {
+  buildPaginationMeta,
+  calculatePagination,
+} from 'src/common/utils/paginate.util';
+import { CreateSaleInput, QuerySalesDto } from './dtos/sales.dto';
 
 const { Decimal } = Prisma;
 
@@ -21,22 +25,58 @@ const { Decimal } = Prisma;
 export class SalesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getAllSales(tenantId?: string): Promise<Sales[]> {
-    return this.prisma.sales.findMany({
-      where: tenantId ? { tenantId } : {},
-      include: {
-        saleItems: {
-          include: { product: true },
+  async getAllSales(tenantId?: string, query?: QuerySalesDto) {
+    const { page, limit, skip } = calculatePagination(query);
+
+    const where: Prisma.SalesWhereInput = {
+      ...(tenantId ? { tenantId } : {}),
+      ...(query?.cashierId ? { cashierId: query.cashierId } : {}),
+      ...(query?.customerId ? { customerId: query.customerId } : {}),
+      ...(query?.paymentMethod ? { paymentMethod: query.paymentMethod } : {}),
+      ...(query?.startDate || query?.endDate
+        ? {
+            createdAt: {
+              ...(query?.startDate ? { gte: new Date(query.startDate) } : {}),
+              ...(query?.endDate ? { lte: new Date(query.endDate) } : {}),
+            },
+          }
+        : {}),
+      ...(query?.search
+        ? {
+            OR: [
+              { invoiceNo: { contains: query.search, mode: 'insensitive' } },
+              { posNumber: { contains: query.search, mode: 'insensitive' } },
+              { note: { contains: query.search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+
+    const [total, data] = await Promise.all([
+      this.prisma.sales.count({ where }),
+      this.prisma.sales.findMany({
+        where,
+        include: {
+          saleItems: {
+            include: { product: true },
+          },
+          cashier: {
+            select: { id: true, name: true, email: true },
+          },
+          customer: true,
+          discount: true,
+          paymentTransactions: true,
         },
-        cashier: {
-          select: { id: true, name: true, email: true },
-        },
-        customer: true,
-        discount: true,
-        paymentTransactions: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        skip,
+        take: limit,
+        orderBy: { createdAt: query?.sortOrder === 'asc' ? 'asc' : 'desc' },
+      }),
+    ]);
+
+    return {
+      data,
+      meta: buildPaginationMeta(total, page, limit),
+    };
   }
 
   async getSaleById(id: string): Promise<Sales> {
@@ -396,7 +436,6 @@ export class SalesService {
       totalVAT: Number(totalVAT),
       totalItemsSold,
       currency: 'NGN',
-      currencySymbol: '₦',
       alerts: {
         totalAlerts: stockAlerts.length,
         outOfStockCount,

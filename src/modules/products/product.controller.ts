@@ -18,7 +18,11 @@ import {
 import { Product, User, UserRole } from 'src/generated/prisma';
 import { Public } from 'src/common/decorators/public.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { CreateProductInput, UpdateProductInput } from './dtos/product.dto';
+import {
+  CreateProductInput,
+  QueryProductDto,
+  UpdateProductInput,
+} from './dtos/product.dto';
 import { ProductService } from './product.service';
 
 @ApiTags('products')
@@ -27,12 +31,15 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Public()
-  @ApiOperation({ summary: 'Get all products (optionally scoped to tenant)' })
-  @ApiResponse({ status: 200, description: 'Return all products.' })
+  @ApiOperation({ summary: 'Get all products with pagination & search' })
+  @ApiResponse({ status: 200, description: 'Return paginated products.' })
   @Get()
-  getAllProducts(@Req() req: Request): Promise<Product[]> {
+  getAllProducts(
+    @Req() req: Request,
+    @Query() query: QueryProductDto,
+  ) {
     const tenantId = req['user']?.tenantId;
-    return this.productService.getAllProducts(tenantId);
+    return this.productService.getAllProducts(tenantId, query);
   }
 
   @Public()

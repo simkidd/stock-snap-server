@@ -10,7 +10,12 @@ export const config = {
   PORT: process.env.PORT || 8080,
   API_PATH: process.env.API_PATH || '/api/v1',
   NODE_ENV: env,
-  JWT_SECRET: process.env.JWT_SECRET || 'r78hbi8hyin',
+  JWT: {
+    SECRET: process.env.JWT_SECRET || 'r78hbi8hyin',
+    SIGN_IN_EXPIRY: process.env.JWT_SIGN_IN_EXPIRY || '24h',
+    REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'kjkjkjhkh',
+    REFRESH_EXPIRY: process.env.JWT_REFRESH_EXPIRY || '7d',
+  },
 
   // Brevo (Transactional Email & SMS API)
   BREVO_API_KEY: process.env.BREVO_API_KEY || '',
