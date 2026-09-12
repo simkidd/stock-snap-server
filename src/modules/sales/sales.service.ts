@@ -61,7 +61,7 @@ export class SalesService {
             include: { product: true },
           },
           cashier: {
-            select: { id: true, name: true, email: true },
+            select: { id: true, firstName: true, middleName: true, lastName: true, email: true },
           },
           customer: true,
           discount: true,
@@ -87,7 +87,7 @@ export class SalesService {
           include: { product: true },
         },
         cashier: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, firstName: true, middleName: true, lastName: true, email: true },
         },
         customer: true,
         discount: true,
@@ -110,7 +110,7 @@ export class SalesService {
           include: { product: true },
         },
         cashier: {
-          select: { id: true, name: true, email: true },
+          select: { id: true, firstName: true, middleName: true, lastName: true, email: true },
         },
         customer: true,
         discount: true,
@@ -442,6 +442,273 @@ export class SalesService {
         lowStockCount,
         itemsNeedingReorder: stockAlerts,
       },
+    };
+  }
+
+  /**
+   * Overall Sales Transaction Ledger KPI Stats
+   */
+  async getSalesStats(tenantId?: string, storeId?: string) {
+    const where: Prisma.SalesWhereInput = {
+      ...(tenantId ? { tenantId } : {}),
+      ...(storeId ? { storeId } : {}),
+    };
+
+    const [aggregate, cashAggregate] = await Promise.all([
+      this.prisma.sales.aggregate({
+        where,
+        _sum: { totalAmount: true },
+        _count: { id: true },
+      }),
+      this.prisma.sales.aggregate({
+        where: {
+          ...where,
+          paymentMethod: PaymentMethodEnum.CASH,
+        },
+        _sum: { totalAmount: true },
+      }),
+    ]);
+
+    const totalVolume = Number(aggregate._sum.totalAmount || 0);
+    const totalTransactions = aggregate._count.id || 0;
+    const cashVolume = Number(cashAggregate._sum.totalAmount || 0);
+    const digitalVolume = totalVolume - cashVolume;
+    const avgOrderValue =
+      totalTransactions > 0 ? totalVolume / totalTransactions : 0;
+
+    return {
+      totalVolume,
+      totalTransactions,
+      avgOrderValue,
+      cashVolume,
+      digitalVolume,
+    };
+  }
+
+  /**
+   * Dashboard Overview Summary KPI metrics
+   */
+  async getDashboardOverview(tenantId?: string, storeId?: string) {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const salesWhere: Prisma.SalesWhereInput = {
+      ...(tenantId ? { tenantId } : {}),
+      ...(storeId ? { storeId } : {}),
+    };
+
+    const [
+      allSalesAggregate,
+      todaySalesAggregate,
+      products,
+      customersAggregate,
+      recentSales,
+      topSaleItems,
+    ] = await Promise.all([
+      this.prisma.sales.aggregate({
+        where: salesWhere,
+        _sum: { totalAmount: true, totalQuantity: true },
+        _count: { id: true },
+      }),
+      this.prisma.sales.aggregate({
+        where: {
+          ...salesWhere,
+          createdAt: { gte: todayStart },
+        },
+        _sum: { totalAmount: true },
+        _count: { id: true },
+      }),
+      this.prisma.product.findMany({
+        where: {
+          ...(tenantId ? { tenantId } : {}),
+        },
+        select: { quantity: true, minimumQuantity: true },
+      }),
+      this.prisma.customer.aggregate({
+        where: {
+          ...(tenantId ? { tenantId } : {}),
+        },
+        _sum: { totalDebt: true, storeCreditBalance: true },
+        _count: { id: true },
+      }),
+      this.prisma.sales.findMany({
+        where: salesWhere,
+        take: 100,
+        select: { paymentMethod: true, totalAmount: true },
+      }),
+      this.prisma.saleItem.groupBy({
+        by: ['productId'],
+        where: {
+          sale: salesWhere,
+        },
+        _sum: {
+          quantity: true,
+          totalAmount: true,
+        },
+        orderBy: {
+          _sum: {
+            quantity: 'desc',
+          },
+        },
+        take: 6,
+      }),
+    ]);
+
+    const topProductIds = topSaleItems.map((i) => i.productId);
+    const topProductsInfo =
+      topProductIds.length > 0
+        ? await this.prisma.product.findMany({
+            where: { id: { in: topProductIds } },
+            select: {
+              id: true,
+              name: true,
+              sku: true,
+              price: true,
+              category: { select: { name: true } },
+            },
+          })
+        : [];
+
+    const topSellingProducts = topSaleItems.map((item) => {
+      const p = topProductsInfo.find((prod) => prod.id === item.productId);
+      return {
+        productId: item.productId,
+        name: p?.name || 'Unknown Item',
+        sku: p?.sku || '',
+        categoryName: p?.category?.name || 'General',
+        price: Number(p?.price || 0),
+        totalQuantity: Number(item._sum.quantity || 0),
+        totalRevenue: Number(item._sum.totalAmount || 0),
+      };
+    });
+
+    const lowStockCount = products.filter(
+      (p) => Number(p.quantity) <= Number(p.minimumQuantity || 5),
+    ).length;
+    const outOfStockCount = products.filter(
+      (p) => Number(p.quantity) <= 0,
+    ).length;
+
+    const paymentBreakdown: Record<string, number> = {
+      CASH: 0,
+      POS_CARD: 0,
+      BANK_TRANSFER: 0,
+      SPLIT: 0,
+      STORE_CREDIT: 0,
+    };
+
+    for (const sale of recentSales) {
+      const method = sale.paymentMethod || 'CASH';
+      paymentBreakdown[method] =
+        (paymentBreakdown[method] || 0) + Number(sale.totalAmount || 0);
+    }
+
+    return {
+      totalRevenue: Number(allSalesAggregate._sum.totalAmount || 0),
+      todayRevenue: Number(todaySalesAggregate._sum.totalAmount || 0),
+      totalItemsSold: Number(allSalesAggregate._sum.totalQuantity || 0),
+      totalTransactions: allSalesAggregate._count.id || 0,
+      todayTransactions: todaySalesAggregate._count.id || 0,
+      lowStockCount,
+      outOfStockCount,
+      totalCustomerDebt: Number(customersAggregate._sum.totalDebt || 0),
+      totalStoreCredit: Number(customersAggregate._sum.storeCreditBalance || 0),
+      totalCustomers: customersAggregate._count.id || 0,
+      paymentBreakdown,
+      topSellingProducts,
+    };
+  }
+
+  /**
+   * Sales & Revenue Analytics Reports breakdown by period
+   */
+  async getSalesReports(
+    tenantId?: string,
+    storeId?: string,
+    period: 'today' | 'week' | 'month' = 'week',
+  ) {
+    const now = new Date();
+    let startDate = new Date();
+
+    if (period === 'today') {
+      startDate.setHours(0, 0, 0, 0);
+    } else if (period === 'week') {
+      startDate.setDate(now.getDate() - 7);
+    } else if (period === 'month') {
+      startDate.setDate(now.getDate() - 30);
+    }
+
+    const salesWhere: Prisma.SalesWhereInput = {
+      createdAt: { gte: startDate },
+      ...(tenantId ? { tenantId } : {}),
+      ...(storeId ? { storeId } : {}),
+    };
+
+    const sales = await this.prisma.sales.findMany({
+      where: salesWhere,
+      include: {
+        cashier: {
+          select: { id: true, firstName: true, middleName: true, lastName: true, email: true },
+        },
+      },
+    });
+
+    let grossSales = 0;
+    let totalDiscount = 0;
+    let totalTax = 0;
+    const paymentBreakdown: Record<string, number> = {
+      CASH: 0,
+      POS_CARD: 0,
+      BANK_TRANSFER: 0,
+      SPLIT: 0,
+      STORE_CREDIT: 0,
+    };
+
+    const cashierMap: Record<
+      string,
+      { cashierId: string; cashierName: string; totalSales: number; transactionCount: number }
+    > = {};
+
+    for (const sale of sales) {
+      const amount = Number(sale.totalAmount || 0);
+      grossSales += amount;
+      totalDiscount += Number(sale.discountAmount || 0);
+      totalTax += Number(sale.taxAmount || 0);
+
+      const method = sale.paymentMethod || 'CASH';
+      paymentBreakdown[method] = (paymentBreakdown[method] || 0) + amount;
+
+      if (sale.cashier) {
+        const cId = sale.cashier.id;
+        const cashierFullName = [sale.cashier.firstName, sale.cashier.middleName, sale.cashier.lastName]
+          .filter(Boolean)
+          .join(' ') || (sale.cashier as any).name || 'Counter Cashier';
+
+        if (!cashierMap[cId]) {
+          cashierMap[cId] = {
+            cashierId: cId,
+            cashierName: cashierFullName,
+            totalSales: 0,
+            transactionCount: 0,
+          };
+        }
+        cashierMap[cId].totalSales += amount;
+        cashierMap[cId].transactionCount += 1;
+      }
+    }
+
+    const totalTransactions = sales.length;
+    const avgOrderValue = totalTransactions > 0 ? grossSales / totalTransactions : 0;
+
+    return {
+      period,
+      grossSales,
+      totalDiscount,
+      totalTax,
+      avgOrderValue,
+      totalTransactions,
+      paymentBreakdown,
+      cashierBreakdown: Object.values(cashierMap),
     };
   }
 }

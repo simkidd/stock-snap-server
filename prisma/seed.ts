@@ -101,7 +101,9 @@ async function main() {
     data: {
       tenantId: tenant.id,
       storeId: store.id,
-      name: 'Chidi Amadi (Admin)',
+      firstName: 'Chidi',
+      middleName: 'Ike',
+      lastName: 'Amadi',
       email: 'admin@stocksnap.ng',
       role: UserRole.ADMIN,
       gender: 'Male',
@@ -120,7 +122,9 @@ async function main() {
     data: {
       tenantId: tenant.id,
       storeId: store.id,
-      name: 'Tamuno Briggs (Store Manager)',
+      firstName: 'Tamuno',
+      middleName: null,
+      lastName: 'Briggs',
       email: 'manager@stocksnap.ng',
       role: UserRole.STORE_MANAGER,
       gender: 'Male',
@@ -139,7 +143,9 @@ async function main() {
     data: {
       tenantId: tenant.id,
       storeId: store.id,
-      name: 'Blessing Jumbo (Cashier)',
+      firstName: 'Blessing',
+      middleName: 'Ada',
+      lastName: 'Jumbo',
       email: 'cashier@stocksnap.ng',
       role: UserRole.CASHIER,
       gender: 'Female',

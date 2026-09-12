@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { User } from 'src/generated/prisma';
+import { Prisma, User } from 'src/generated/prisma';
 import * as bcrypt from 'bcryptjs';
 import { verify } from 'jsonwebtoken';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -33,12 +33,10 @@ export class UserService {
     return this.prisma.user.findMany({
       where: {
         OR: [
-          {
-            name: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { middleName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
         ],
       },
       skip,
@@ -110,9 +108,11 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
+    const { password: _password, id: _id, ...updateData } = input;
+
     return this.prisma.user.update({
       where: { id: input.id },
-      data: input,
+      data: updateData,
     });
   }
 
@@ -167,5 +167,38 @@ export class UserService {
       where: { id: user.id },
       data: { status: input.status },
     });
+  }
+
+  /**
+   * Get Staff Management KPI Summary Metrics
+   */
+  async getUserStats(tenantId?: string) {
+    const where: Prisma.UserWhereInput = {
+      ...(tenantId ? { tenantId } : {}),
+    };
+
+    const [totalStaff, activeStaff, cashierCount, managerCount] =
+      await Promise.all([
+        this.prisma.user.count({ where }),
+        this.prisma.user.count({
+          where: { ...where, status: 'ACTIVE' },
+        }),
+        this.prisma.user.count({
+          where: { ...where, role: 'CASHIER' },
+        }),
+        this.prisma.user.count({
+          where: {
+            ...where,
+            role: { in: ['ADMIN', 'STORE_MANAGER', 'MANAGER'] },
+          },
+        }),
+      ]);
+
+    return {
+      totalStaff,
+      activeStaff,
+      cashierCount,
+      managerCount,
+    };
   }
 }

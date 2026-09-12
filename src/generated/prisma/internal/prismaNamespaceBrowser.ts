@@ -322,7 +322,9 @@ export type PaymentTransactionScalarFieldEnum = (typeof PaymentTransactionScalar
 
 export const UserScalarFieldEnum = {
   id: 'id',
-  name: 'name',
+  firstName: 'firstName',
+  middleName: 'middleName',
+  lastName: 'lastName',
   gender: 'gender',
   avatar: 'avatar',
   avatarId: 'avatarId',

@@ -180,4 +180,34 @@ export class CustomerService {
       },
     });
   }
+
+  /**
+   * Get Customer CRM KPI Summary Metrics
+   */
+  async getCustomerStats(tenantId?: string) {
+    const where: Prisma.CustomerWhereInput = {
+      ...(tenantId ? { tenantId } : {}),
+    };
+
+    const [aggregate, debtorsCount] = await Promise.all([
+      this.prisma.customer.aggregate({
+        where,
+        _sum: { totalDebt: true, storeCreditBalance: true },
+        _count: { id: true },
+      }),
+      this.prisma.customer.count({
+        where: {
+          ...where,
+          totalDebt: { gt: 0 },
+        },
+      }),
+    ]);
+
+    return {
+      totalCustomers: aggregate._count.id || 0,
+      totalDebt: Number(aggregate._sum.totalDebt || 0),
+      totalCredit: Number(aggregate._sum.storeCreditBalance || 0),
+      debtorsCount,
+    };
+  }
 }

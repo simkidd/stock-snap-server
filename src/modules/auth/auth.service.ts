@@ -40,11 +40,18 @@ export class AuthService {
   private async generateTokens(
     user: User,
   ): Promise<{ accessToken: string; refreshToken: string }> {
+    const fullName = [user.firstName, user.middleName, user.lastName]
+      .filter(Boolean)
+      .join(' ') || (user as any).name || '';
+
     const payload = {
       id: user.id,
       email: user.email,
       role: user.role,
-      name: user.name,
+      firstName: user.firstName,
+      middleName: user.middleName,
+      lastName: user.lastName,
+      name: fullName,
       tenantId: user.tenantId,
       storeId: user.storeId,
     };
@@ -190,9 +197,12 @@ export class AuthService {
       if (manager.auth?.pinCode) {
         const isMatch = await bcrypt.compare(input.pin, manager.auth.pinCode);
         if (isMatch) {
+          const managerFullName = [manager.firstName, manager.middleName, manager.lastName]
+            .filter(Boolean)
+            .join(' ') || (manager as any).name || 'Store Manager';
           return {
             authorized: true,
-            managerName: manager.name,
+            managerName: managerFullName,
             managerId: manager.id,
           };
         }
@@ -340,7 +350,7 @@ export class AuthService {
       const html = template({
         appName: config.APP_NAME,
         resetUrl,
-        userName: user.name.split(' ')?.[0],
+        userName: user.firstName || 'User',
         appDomain: config.APP_DOMAIN,
         currentYear: new Date().getFullYear(),
       });

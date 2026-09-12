@@ -7,7 +7,6 @@ import {
   Patch,
   Post,
   Query,
-  Req,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -17,6 +16,7 @@ import {
 } from '@nestjs/swagger';
 import { Product, User, UserRole } from 'src/generated/prisma';
 import { Public } from 'src/common/decorators/public.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
 import {
   CreateProductInput,
@@ -35,11 +35,27 @@ export class ProductController {
   @ApiResponse({ status: 200, description: 'Return paginated products.' })
   @Get()
   getAllProducts(
-    @Req() req: Request,
+    @CurrentUser() user: any,
     @Query() query: QueryProductDto,
   ) {
-    const tenantId = req['user']?.tenantId;
+    const tenantId = user?.tenantId;
     return this.productService.getAllProducts(tenantId, query);
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Get product inventory KPI metrics' })
+  @ApiResponse({ status: 200, description: 'Return product catalog stats.' })
+  @Get('stats')
+  getProductStats(@CurrentUser() user: any) {
+    return this.productService.getProductStats(user?.tenantId);
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Get stock movement audit KPI metrics' })
+  @ApiResponse({ status: 200, description: 'Return stock movement stats.' })
+  @Get('movements/stats')
+  getStockMovementStats(@CurrentUser() user: any) {
+    return this.productService.getStockMovementStats(user?.tenantId);
   }
 
   @Public()
@@ -49,9 +65,9 @@ export class ProductController {
   @Get('barcode/:barcode')
   getProductByBarcode(
     @Param('barcode') barcode: string,
-    @Req() req: Request,
+    @CurrentUser() user: any,
   ): Promise<Product> {
-    const tenantId = req['user']?.tenantId;
+    const tenantId = user?.tenantId;
     return this.productService.getProductByBarcode(barcode, tenantId);
   }
 
@@ -64,8 +80,8 @@ export class ProductController {
     description: 'Return low stock & out of stock products.',
   })
   @Get('alerts/low-stock')
-  getLowStockAlerts(@Req() req: Request) {
-    const tenantId = req['user']?.tenantId;
+  getLowStockAlerts(@CurrentUser() user: any) {
+    const tenantId = user?.tenantId;
     return this.productService.getLowStockAlerts(tenantId);
   }
 
@@ -75,9 +91,9 @@ export class ProductController {
   @Get('search')
   searchProducts(
     @Query('q') q: string,
-    @Req() req: Request,
+    @CurrentUser() user: any,
   ): Promise<Product[]> {
-    const tenantId = req['user']?.tenantId;
+    const tenantId = user?.tenantId;
     return this.productService.searchProducts(q, tenantId);
   }
 
@@ -99,13 +115,12 @@ export class ProductController {
   @Post('/create')
   createProduct(
     @Body() input: CreateProductInput,
-    @Req() req: Request,
+    @CurrentUser() user: any,
   ): Promise<Product> {
-    const user = req['user'] as User;
     return this.productService.createProduct(
       input,
-      user.id,
-      user.tenantId ?? undefined,
+      user?.id,
+      user?.tenantId ?? undefined,
     );
   }
 
@@ -116,10 +131,9 @@ export class ProductController {
   @Patch('/update')
   updateProduct(
     @Body() input: UpdateProductInput,
-    @Req() req: Request,
+    @CurrentUser() user: any,
   ): Promise<Product> {
-    const user = req['user'] as User;
-    return this.productService.updateProduct(input, user.id);
+    return this.productService.updateProduct(input, user?.id);
   }
 
   @ApiBearerAuth('Authorization')

@@ -332,7 +332,9 @@ model PaymentTransaction {
 
 model User {
   id               String            @id @default(cuid())
-  name             String
+  firstName        String            @default("")
+  middleName       String?
+  lastName         String            @default("")
   gender           String?
   avatar           String?
   avatarId         String?

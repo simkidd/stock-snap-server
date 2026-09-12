@@ -289,4 +289,74 @@ export class ProductService {
       });
     }
   }
+
+  /**
+   * Get Product & Inventory KPI Summary Metrics
+   */
+  async getProductStats(tenantId?: string) {
+    const where: Prisma.ProductWhereInput = {
+      ...(tenantId ? { tenantId } : {}),
+    };
+
+    const products = await this.prisma.product.findMany({
+      where,
+      select: {
+        price: true,
+        costPrice: true,
+        quantity: true,
+        minimumQuantity: true,
+        status: true,
+      },
+    });
+
+    let totalValuation = 0;
+    let totalCostValuation = 0;
+    let lowStockCount = 0;
+    let outOfStockCount = 0;
+
+    for (const p of products) {
+      const qty = Number(p.quantity || 0);
+      totalValuation += Number(p.price || 0) * qty;
+      totalCostValuation += Number(p.costPrice || 0) * qty;
+
+      if (qty <= 0) {
+        outOfStockCount++;
+      } else if (qty <= Number(p.minimumQuantity || 5)) {
+        lowStockCount++;
+      }
+    }
+
+    return {
+      totalProducts: products.length,
+      totalValuation,
+      totalCostValuation,
+      lowStockCount,
+      outOfStockCount,
+    };
+  }
+
+  /**
+   * Get Stock Movement Audit Log KPI Summary Metrics
+   */
+  async getStockMovementStats(tenantId?: string) {
+    const where: Prisma.StockMovementWhereInput = {
+      ...(tenantId ? { tenantId } : {}),
+    };
+
+    const [total, purchases, sales, adjustments, returns] = await Promise.all([
+      this.prisma.stockMovement.count({ where }),
+      this.prisma.stockMovement.count({ where: { ...where, type: 'PURCHASE' } }),
+      this.prisma.stockMovement.count({ where: { ...where, type: 'SALE' } }),
+      this.prisma.stockMovement.count({ where: { ...where, type: 'ADJUSTMENT' } }),
+      this.prisma.stockMovement.count({ where: { ...where, type: 'RETURN' } }),
+    ]);
+
+    return {
+      totalMovements: total,
+      purchaseCount: purchases,
+      saleCount: sales,
+      adjustmentCount: adjustments,
+      returnCount: returns,
+    };
+  }
 }

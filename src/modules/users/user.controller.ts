@@ -49,6 +49,14 @@ export class UserController {
     return this.userService.getAllUsers();
   }
 
+  @Public()
+  @ApiOperation({ summary: 'Get staff roster KPI metrics' })
+  @ApiResponse({ status: 200, description: 'Return staff summary statistics.' })
+  @Get('stats')
+  getUserStats(@CurrentUser() user: any) {
+    return this.userService.getUserStats(user?.tenantId);
+  }
+
   @ApiBearerAuth('Authorization')
   @ApiOperation({ summary: 'Get currently authenticated staff profile' })
   @ApiResponse({
