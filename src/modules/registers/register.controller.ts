@@ -28,6 +28,24 @@ export class RegisterController {
   }
 
   @Public()
+  @ApiOperation({ summary: 'Get current active register session for user/tenant' })
+  @ApiResponse({ status: 200, description: 'Return active open session or null.' })
+  @Get('session/active')
+  getActiveSession(@Req() req: Request) {
+    const user = req['user'];
+    return this.registerService.getActiveSession(user?.id, user?.tenantId);
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Get current active register session (alias)' })
+  @ApiResponse({ status: 200, description: 'Return active open session or null.' })
+  @Get('active-session')
+  getActiveSessionAlias(@Req() req: Request) {
+    const user = req['user'];
+    return this.registerService.getActiveSession(user?.id, user?.tenantId);
+  }
+
+  @Public()
   @ApiOperation({ summary: 'Get current active shift metrics for a register' })
   @ApiResponse({ status: 200, description: 'Return active shift metrics.' })
   @Get(':id/active-shift')

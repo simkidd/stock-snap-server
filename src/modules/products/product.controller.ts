@@ -7,7 +7,6 @@ import {
   Patch,
   Post,
   Query,
-  Req,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -17,8 +16,13 @@ import {
 } from '@nestjs/swagger';
 import { Product, User, UserRole } from 'src/generated/prisma';
 import { Public } from 'src/common/decorators/public.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { CreateProductInput, UpdateProductInput } from './dtos/product.dto';
+import {
+  CreateProductInput,
+  QueryProductDto,
+  UpdateProductInput,
+} from './dtos/product.dto';
 import { ProductService } from './product.service';
 
 @ApiTags('products')
@@ -27,12 +31,31 @@ export class ProductController {
   constructor(private readonly productService: ProductService) {}
 
   @Public()
-  @ApiOperation({ summary: 'Get all products (optionally scoped to tenant)' })
-  @ApiResponse({ status: 200, description: 'Return all products.' })
+  @ApiOperation({ summary: 'Get all products with pagination & search' })
+  @ApiResponse({ status: 200, description: 'Return paginated products.' })
   @Get()
-  getAllProducts(@Req() req: Request): Promise<Product[]> {
-    const tenantId = req['user']?.tenantId;
-    return this.productService.getAllProducts(tenantId);
+  getAllProducts(
+    @CurrentUser() user: any,
+    @Query() query: QueryProductDto,
+  ) {
+    const tenantId = user?.tenantId;
+    return this.productService.getAllProducts(tenantId, query);
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Get product inventory KPI metrics' })
+  @ApiResponse({ status: 200, description: 'Return product catalog stats.' })
+  @Get('stats')
+  getProductStats(@CurrentUser() user: any) {
+    return this.productService.getProductStats(user?.tenantId);
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Get stock movement audit KPI metrics' })
+  @ApiResponse({ status: 200, description: 'Return stock movement stats.' })
+  @Get('movements/stats')
+  getStockMovementStats(@CurrentUser() user: any) {
+    return this.productService.getStockMovementStats(user?.tenantId);
   }
 
   @Public()
@@ -42,9 +65,9 @@ export class ProductController {
   @Get('barcode/:barcode')
   getProductByBarcode(
     @Param('barcode') barcode: string,
-    @Req() req: Request,
+    @CurrentUser() user: any,
   ): Promise<Product> {
-    const tenantId = req['user']?.tenantId;
+    const tenantId = user?.tenantId;
     return this.productService.getProductByBarcode(barcode, tenantId);
   }
 
@@ -57,8 +80,8 @@ export class ProductController {
     description: 'Return low stock & out of stock products.',
   })
   @Get('alerts/low-stock')
-  getLowStockAlerts(@Req() req: Request) {
-    const tenantId = req['user']?.tenantId;
+  getLowStockAlerts(@CurrentUser() user: any) {
+    const tenantId = user?.tenantId;
     return this.productService.getLowStockAlerts(tenantId);
   }
 
@@ -68,9 +91,9 @@ export class ProductController {
   @Get('search')
   searchProducts(
     @Query('q') q: string,
-    @Req() req: Request,
+    @CurrentUser() user: any,
   ): Promise<Product[]> {
-    const tenantId = req['user']?.tenantId;
+    const tenantId = user?.tenantId;
     return this.productService.searchProducts(q, tenantId);
   }
 
@@ -86,40 +109,39 @@ export class ProductController {
   @ApiBearerAuth('Authorization')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.INVENTORY_CONTROLLER)
   @ApiOperation({
-    summary: 'Create a new product with barcode and Naira pricing',
+    summary: 'Create a new product with barcode and pricing',
   })
   @ApiResponse({ status: 201, description: 'Product created successfully.' })
-  @Post('/create')
+  @Post()
   createProduct(
     @Body() input: CreateProductInput,
-    @Req() req: Request,
+    @CurrentUser() user: any,
   ): Promise<Product> {
-    const user = req['user'] as User;
     return this.productService.createProduct(
       input,
-      user.id,
-      user.tenantId ?? undefined,
+      user?.id,
+      user?.tenantId ?? undefined,
     );
   }
 
   @ApiBearerAuth('Authorization')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.INVENTORY_CONTROLLER)
-  @ApiOperation({ summary: 'Update a product' })
+  @ApiOperation({ summary: 'Update a product by ID' })
   @ApiResponse({ status: 200, description: 'Product updated successfully.' })
-  @Patch('/update')
+  @Patch(':id')
   updateProduct(
+    @Param('id') id: string,
     @Body() input: UpdateProductInput,
-    @Req() req: Request,
+    @CurrentUser() user: any,
   ): Promise<Product> {
-    const user = req['user'] as User;
-    return this.productService.updateProduct(input, user.id);
+    return this.productService.updateProduct({ ...input, id }, user?.id);
   }
 
   @ApiBearerAuth('Authorization')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  @ApiOperation({ summary: 'Delete a product' })
+  @ApiOperation({ summary: 'Delete a product by ID' })
   @ApiResponse({ status: 200, description: 'Product deleted successfully.' })
-  @Delete('/delete/:id')
+  @Delete(':id')
   deleteProduct(@Param('id') id: string): Promise<Product> {
     return this.productService.deleteProduct(id);
   }

@@ -31,10 +31,28 @@ export class RegisterService {
         sessions: {
           where: { status: SessionStatusEnum.OPEN },
           include: {
-            cashier: { select: { id: true, name: true, email: true } },
+            cashier: { select: { id: true, firstName: true, middleName: true, lastName: true, email: true } },
           },
         },
       },
+    });
+  }
+
+  async getActiveSession(
+    userId?: string,
+    tenantId?: string,
+  ): Promise<RegisterSession | null> {
+    return this.prisma.registerSession.findFirst({
+      where: {
+        status: SessionStatusEnum.OPEN,
+        ...(userId ? { cashierId: userId } : {}),
+        ...(tenantId ? { tenantId } : {}),
+      },
+      include: {
+        register: true,
+        cashier: { select: { id: true, firstName: true, middleName: true, lastName: true, email: true } },
+      },
+      orderBy: { openedAt: 'desc' },
     });
   }
 
@@ -107,7 +125,7 @@ export class RegisterService {
       },
       include: {
         register: true,
-        cashier: { select: { id: true, name: true, email: true } },
+        cashier: { select: { id: true, firstName: true, middleName: true, lastName: true, email: true } },
       },
     });
   }
@@ -119,7 +137,7 @@ export class RegisterService {
     const session = await this.prisma.registerSession.findFirst({
       where: { registerId, status: SessionStatusEnum.OPEN },
       include: {
-        cashier: { select: { id: true, name: true } },
+        cashier: { select: { id: true, firstName: true, middleName: true, lastName: true } },
         register: true,
         sales: {
           include: { paymentTransactions: true },
@@ -172,7 +190,7 @@ export class RegisterService {
         sales: {
           include: { paymentTransactions: true },
         },
-        cashier: { select: { id: true, name: true } },
+        cashier: { select: { id: true, firstName: true, middleName: true, lastName: true } },
         register: true,
       },
     });
@@ -222,7 +240,10 @@ export class RegisterService {
       zReport: {
         sessionId: session.id,
         register: session.register.name,
-        cashier: session.cashier.name,
+        cashier:
+          [session.cashier.firstName, session.cashier.middleName, session.cashier.lastName]
+            .filter(Boolean)
+            .join(' ') || 'Cashier',
         openedAt: session.openedAt,
         closedAt: updatedSession.closedAt,
         openingFloat: Number(openingFloat),
@@ -239,7 +260,6 @@ export class RegisterService {
             ? 'OVERAGE'
             : 'SHORTAGE',
         currency: 'NGN',
-        currencySymbol: '₦',
       },
     };
   }

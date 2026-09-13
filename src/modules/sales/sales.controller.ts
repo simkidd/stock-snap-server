@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { SalesService } from './sales.service';
 import {
   ApiBearerAuth,
@@ -7,9 +7,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { Sales, UserRole } from 'src/generated/prisma';
 import { Roles } from 'src/common/decorators/roles.decorator';
-import { CreateSaleInput } from './dtos/sales.dto';
+import { CreateSaleInput, QuerySalesDto } from './dtos/sales.dto';
 
 @ApiTags('sales')
 @Controller('sales')
@@ -17,12 +18,57 @@ export class SalesController {
   constructor(private readonly salesService: SalesService) {}
 
   @Public()
-  @ApiOperation({ summary: 'Get all sales records' })
-  @ApiResponse({ status: 200, description: 'Return all Sales.' })
+  @ApiOperation({ summary: 'Get all sales records with pagination & filters' })
+  @ApiResponse({ status: 200, description: 'Return paginated sales.' })
   @Get()
-  getAllSales(@Req() req: Request): Promise<Sales[]> {
-    const tenantId = req['user']?.tenantId;
-    return this.salesService.getAllSales(tenantId);
+  getAllSales(
+    @CurrentUser() user: any,
+    @Query() query: QuerySalesDto,
+  ) {
+    const tenantId = user?.tenantId;
+    return this.salesService.getAllSales(tenantId, query);
+  }
+
+  @Public()
+  @ApiOperation({
+    summary: 'Get sales transaction ledger summary metrics',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'KPI metrics for sales ledger.',
+  })
+  @Get('stats')
+  getSalesStats(@CurrentUser() user: any) {
+    return this.salesService.getSalesStats(user?.tenantId, user?.storeId);
+  }
+
+  @Public()
+  @ApiOperation({
+    summary: 'Get complete dashboard overview statistics',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Dashboard overview metrics.',
+  })
+  @Get('dashboard/overview')
+  getDashboardOverview(@CurrentUser() user: any) {
+    return this.salesService.getDashboardOverview(user?.tenantId, user?.storeId);
+  }
+
+  @Public()
+  @ApiOperation({
+    summary: 'Get revenue analytics reports with period filtering',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Sales analytics reports.',
+  })
+  @Get('analytics/reports')
+  getSalesReports(
+    @CurrentUser() user: any,
+    @Query('period') period?: 'today' | 'week' | 'month',
+  ) {
+    return this.salesService.getSalesReports(user?.tenantId, user?.storeId, period || 'week');
   }
 
   @Public()
@@ -34,9 +80,9 @@ export class SalesController {
     description: 'Daily sales metrics for dashboard.',
   })
   @Get('dashboard/summary')
-  getSalesSummary(@Req() req: Request) {
-    const tenantId = req['user']?.tenantId;
-    const storeId = req['user']?.storeId;
+  getSalesSummary(@CurrentUser() user: any) {
+    const tenantId = user?.tenantId;
+    const storeId = user?.storeId;
     return this.salesService.getSalesSummary(tenantId, storeId);
   }
 
@@ -80,11 +126,10 @@ export class SalesController {
     description: 'Bad request or insufficient stock.',
   })
   @Post('/create')
-  createSale(@Body() input: CreateSaleInput, @Req() req: Request) {
-    const user = req['user'];
+  createSale(@Body() input: CreateSaleInput, @CurrentUser() user: any) {
     return this.salesService.createSale(
       input,
-      user.id,
+      user?.id,
       user?.tenantId,
       user?.storeId,
     );

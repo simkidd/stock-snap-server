@@ -10,9 +10,20 @@ import {
 } from 'class-validator';
 
 export class CreateUserInput {
-  @ApiProperty({ example: 'John Doe' })
+  @ApiProperty({ example: 'John' })
+  @IsNotEmpty()
   @IsString()
-  name: string;
+  firstName: string;
+
+  @ApiProperty({ example: 'Chinedu', required: false })
+  @IsOptional()
+  @IsString()
+  middleName?: string;
+
+  @ApiProperty({ example: 'Doe' })
+  @IsNotEmpty()
+  @IsString()
+  lastName: string;
 
   @ApiProperty({ example: 'john.doe@example.com' })
   @IsEmail()

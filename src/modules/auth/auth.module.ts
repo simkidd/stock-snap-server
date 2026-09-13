@@ -13,8 +13,8 @@ import { MailService } from 'src/utils/mailer';
     UserModule,
     JwtModule.register({
       global: true,
-      secret: config.JWT_SECRET,
-      signOptions: { expiresIn: '24h' },
+      secret: config.JWT.SECRET,
+      signOptions: { expiresIn: config.JWT.SIGN_IN_EXPIRY as any },
     }),
   ],
   controllers: [AuthController],

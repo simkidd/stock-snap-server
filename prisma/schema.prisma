@@ -19,7 +19,6 @@ model Tenant {
   name               String              // e.g. "StockSnap Supermarket"
   slug               String              @unique
   currency           String              @default("NGN")
-  currencySymbol     String              @default("₦")
   phone              String?
   email              String?
   address            String?             // e.g. "Peter Odili Road"
@@ -142,37 +141,52 @@ model Customer {
 
 model Product {
   id                String            @id @default(cuid())
-  sku               String
-  barcode           String?           // 1D/2D Barcode (EAN-13, UPC) for laser scanners
-  name              String
-  slug              String
-  size              String?
-  color             String?
-  expiryDate        DateTime?         // Alerts for expiring stock
-  unit              String?           // Pack, Carton, Bottle, Piece, etc.
-  piecesPerPack     Int?              @default(1) // Break-bulk: e.g. 40 packets per carton
-  tags              String[]
-  description       String?
-  costPrice         Decimal           @default(0) // Cost of Goods Sold (for Profit Margins)
-  price             Decimal           // Selling Price in ₦
-  quantity          Int               @default(0)
-  minimumQuantity   Int               @default(5) // Low stock re-order alert threshold
-  isTaxExempt       Boolean           @default(false) // True for zero-rated goods (raw food, medicine)
-  status            ProductStatusEnum @default(AVAILABLE)
-
   tenantId          String
   tenant            Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  categoryId        String
-  category          Category          @relation(fields: [categoryId], references: [id])
+
+  // Core Identity & Classification
+  name              String
+  slug              String
+  description       String?
+  tags              String[]
+
+  // SKU & Barcode (Master/Simple)
+  sku               String
+  barcode           String?
+
+  // Variant Architecture
+  hasVariants       Boolean           @default(false)
+  options           Json?             // e.g. [{ "name": "Size", "values": ["S", "M", "L"] }]
+
+  // Pricing & Financials (in ₦)
+  costPrice         Decimal           @default(0)
+  price             Decimal           // Selling price (or starting base price for variant items)
+  isTaxExempt       Boolean           @default(false) // 7.5% Nigerian VAT toggle
+
+  // Stock, Alerts & FMCG Units
+  quantity          Int               @default(0) // Live aggregate on-hand stock
+  minimumQuantity   Int               @default(5) // Low stock alert threshold
+  status            ProductStatusEnum @default(AVAILABLE)
+  unit              String?           @default("pieces") // pieces, carton, pack, bottle, kg, litre, rolls
+  piecesPerPack     Int?              @default(1) // Break-bulk carton conversion
+  expiryDate        DateTime?         // Perishables and pharma expiration
+
+  // Relations
+  categoryId        String?
+  category          Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   brandId           String?
-  brand             Brand?            @relation(fields: [brandId], references: [id])
+  brand             Brand?            @relation(fields: [brandId], references: [id], onDelete: SetNull)
   supplierId        String?
-  Supplier          Supplier?         @relation(fields: [supplierId], references: [id])
+  Supplier          Supplier?         @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  // Audit
   addedById         String
   addedBy           User              @relation("addedBy", fields: [addedById], references: [id])
   updatedById       String?
-  updatedBy         User?             @relation("updatedBy", fields: [updatedById], references: [id])
+  updatedBy         User?             @relation("updatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 
+  // Child Relations
+  variants          ProductVariant[]
   images            ProductImage[]
   saleItems         SaleItem[]
   stockMovements    StockMovement[]
@@ -181,7 +195,40 @@ model Product {
   updatedAt         DateTime          @updatedAt
 
   @@unique([tenantId, sku])
+  @@index([tenantId, barcode])
+  @@index([tenantId, status])
+  @@index([tenantId, categoryId])
   @@map("products")
+}
+
+model ProductVariant {
+  id                String            @id @default(cuid())
+  productId         String
+  product           Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  name              String            // e.g. "Size 42 / Black" or "100ml / EDP"
+  sku               String            // Unique Variant SKU e.g. "NK-AF1-BLK-42"
+  barcode           String?           // Variant-specific barcode for laser scanners
+  imageUrl          String?           // Variant-specific photo/swatch
+
+  costPrice         Decimal           @default(0)
+  price             Decimal           // Specific variant selling price in ₦
+  quantity          Int               @default(0) // Specific variant stock count
+  minimumQuantity   Int               @default(5) // Low stock threshold
+  isActive          Boolean           @default(true)
+
+  attributes        Json?             // e.g. { "Size": "42", "Color": "Black" }
+
+  saleItems         SaleItem[]
+  stockMovements    StockMovement[]
+
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  @@unique([productId, sku])
+  @@index([productId])
+  @@index([barcode])
+  @@map("product_variants")
 }
 
 model Brand {
@@ -238,6 +285,8 @@ model StockMovement {
   store          Store?            @relation(fields: [storeId], references: [id], onDelete: SetNull)
   productId      String
   product        Product           @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId      String?
+  variant        ProductVariant?   @relation(fields: [variantId], references: [id], onDelete: Cascade)
   userId         String
   user           User              @relation(fields: [userId], references: [id])
   type           StockMovementType // PURCHASE, SALE, RETURN, ADJUSTMENT, BREAK_BULK
@@ -294,11 +343,13 @@ model Sales {
 }
 
 model SaleItem {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   saleId      String
-  sale        Sales    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  sale        Sales           @relation(fields: [saleId], references: [id], onDelete: Cascade)
   productId   String
-  product     Product  @relation(fields: [productId], references: [id])
+  product     Product         @relation(fields: [productId], references: [id])
+  variantId   String?
+  variant     ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
   quantity    Int
   unitPrice   Decimal  // Selling price per item
   costPrice   Decimal  @default(0) // Cost price at moment of sale (for accurate historical profit)
@@ -333,7 +384,9 @@ model PaymentTransaction {
 
 model User {
   id               String            @id @default(cuid())
-  name             String
+  firstName        String            @default("")
+  middleName       String?
+  lastName         String            @default("")
   gender           String?
   avatar           String?
   avatarId         String?

@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { User } from 'src/generated/prisma';
+import { Prisma, User } from 'src/generated/prisma';
 import * as bcrypt from 'bcryptjs';
 import { verify } from 'jsonwebtoken';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -33,12 +33,10 @@ export class UserService {
     return this.prisma.user.findMany({
       where: {
         OR: [
-          {
-            name: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          },
+          { firstName: { contains: search, mode: 'insensitive' } },
+          { middleName: { contains: search, mode: 'insensitive' } },
+          { lastName: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
         ],
       },
       skip,
@@ -59,7 +57,7 @@ export class UserService {
   async findUser(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
-      include: { auth: true },
+      include: { auth: true, store: true, tenant: true },
     });
     if (!user) {
       throw new NotFoundException('User id not found');
@@ -70,7 +68,7 @@ export class UserService {
   async getUserByEmail(email: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
-      include: { auth: true },
+      include: { auth: true, store: true, tenant: true },
     });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -110,16 +108,18 @@ export class UserService {
       throw new NotFoundException('User not found');
     }
 
+    const { password: _password, id: _id, ...updateData } = input;
+
     return this.prisma.user.update({
       where: { id: input.id },
-      data: input,
+      data: updateData,
     });
   }
 
   async decodeJWT(token: string): Promise<User | null> {
     if (!token) return null;
     try {
-      const { id } = verify(token, config.JWT_SECRET) as { id: string };
+      const { id } = verify(token, config.JWT.SECRET) as { id: string };
       return await this.getUserById(id);
     } catch (_error) {
       console.error('Invalid signature on decodeJWT');
@@ -130,6 +130,10 @@ export class UserService {
   async getMe(id: string): Promise<User> {
     const user = await this.prisma.user.findUnique({
       where: { id },
+      include: {
+        store: true,
+        tenant: true,
+      },
     });
     if (!user) {
       throw new NotFoundException('User not found');
@@ -163,5 +167,38 @@ export class UserService {
       where: { id: user.id },
       data: { status: input.status },
     });
+  }
+
+  /**
+   * Get Staff Management KPI Summary Metrics
+   */
+  async getUserStats(tenantId?: string) {
+    const where: Prisma.UserWhereInput = {
+      ...(tenantId ? { tenantId } : {}),
+    };
+
+    const [totalStaff, activeStaff, cashierCount, managerCount] =
+      await Promise.all([
+        this.prisma.user.count({ where }),
+        this.prisma.user.count({
+          where: { ...where, status: 'ACTIVE' },
+        }),
+        this.prisma.user.count({
+          where: { ...where, role: 'CASHIER' },
+        }),
+        this.prisma.user.count({
+          where: {
+            ...where,
+            role: { in: ['ADMIN', 'STORE_MANAGER', 'MANAGER'] },
+          },
+        }),
+      ]);
+
+    return {
+      totalStaff,
+      activeStaff,
+      cashierCount,
+      managerCount,
+    };
   }
 }

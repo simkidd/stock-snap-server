@@ -5,6 +5,8 @@ import * as express from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { config } from './utils/config';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 const prodOrigins = ['https://stock-snap-client.vercel.app'];
 const devOrigins = ['http://localhost:3000', 'http://localhost:5173'];
@@ -40,6 +42,12 @@ async function bootstrap() {
   app.use(express.json());
 
   app.setGlobalPrefix(config.API_PATH);
+
+  // Global Exception Filter for uniform error envelope
+  app.useGlobalFilters(new HttpExceptionFilter());
+
+  // Global Response Interceptor for uniform success response envelope
+  app.useGlobalInterceptors(new ResponseInterceptor());
 
   // Whitelist-strict validation pipe
   app.useGlobalPipes(

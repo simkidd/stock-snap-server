@@ -29,18 +29,20 @@ export class AuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
     if (!token) {
-      throw new UnauthorizedException();
+      console.warn(`[AuthGuard] 401: No Bearer token found for ${request.method} ${request.url}`);
+      throw new UnauthorizedException('No authorization token provided');
     }
     try {
       const payload = await this.jwtService.verifyAsync(token, {
-        secret: config.JWT_SECRET,
+        secret: config.JWT.SECRET,
       });
 
       // 💡 We're assigning the payload to the request object here
       // so that we can access it in our route handlers
       request['user'] = payload;
-    } catch {
-      throw new UnauthorizedException();
+    } catch (err: any) {
+      console.warn(`[AuthGuard] 401: JWT verification failed for ${request.method} ${request.url} - ${err?.message}`);
+      throw new UnauthorizedException('Invalid or expired token');
     }
     return true;
   }

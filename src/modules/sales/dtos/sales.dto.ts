@@ -39,6 +39,14 @@ export class SaleItemInput {
   @IsNumber()
   unitPrice?: number;
 
+  @ApiPropertyOptional({
+    description: 'ID of the product variant being sold (optional)',
+    example: 'cuid_variant_123',
+  })
+  @IsOptional()
+  @IsString()
+  variantId?: string;
+
   @ApiPropertyOptional({ description: 'Description or notes for item' })
   @IsOptional()
   @IsString()
@@ -173,4 +181,49 @@ export class SaleReceiptResponseDTO {
   sale: any;
   receiptHtml?: string;
   changeDue: number;
+}
+
+export class QuerySalesDto {
+  @ApiPropertyOptional({ default: 1, minimum: 1 })
+  @IsOptional()
+  page?: number;
+
+  @ApiPropertyOptional({ default: 20, minimum: 1, maximum: 100 })
+  @IsOptional()
+  limit?: number;
+
+  @ApiPropertyOptional({ description: 'Search by invoice number or note' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by cashier user ID' })
+  @IsOptional()
+  @IsString()
+  cashierId?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by customer ID' })
+  @IsOptional()
+  @IsString()
+  customerId?: string;
+
+  @ApiPropertyOptional({ enum: PaymentMethodEnum, description: 'Filter by payment method' })
+  @IsOptional()
+  @IsEnum(PaymentMethodEnum)
+  paymentMethod?: PaymentMethodEnum;
+
+  @ApiPropertyOptional({ description: 'Start date ISO string (e.g. 2026-09-01)' })
+  @IsOptional()
+  @IsString()
+  startDate?: string;
+
+  @ApiPropertyOptional({ description: 'End date ISO string (e.g. 2026-09-30)' })
+  @IsOptional()
+  @IsString()
+  endDate?: string;
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'], default: 'desc' })
+  @IsOptional()
+  @IsString()
+  sortOrder?: 'asc' | 'desc';
 }

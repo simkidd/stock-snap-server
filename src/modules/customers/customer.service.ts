@@ -9,8 +9,13 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import {
   AdjustCreditOrDebtInput,
   CreateCustomerInput,
+  QueryCustomerDto,
   UpdateCustomerInput,
 } from './dtos/customer.dto';
+import {
+  buildPaginationMeta,
+  calculatePagination,
+} from 'src/common/utils/paginate.util';
 
 const { Decimal } = Prisma;
 
@@ -18,11 +23,37 @@ const { Decimal } = Prisma;
 export class CustomerService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getAllCustomers(tenantId?: string): Promise<Customer[]> {
-    return this.prisma.customer.findMany({
-      where: tenantId ? { tenantId } : {},
-      orderBy: { name: 'asc' },
-    });
+  async getAllCustomers(tenantId?: string, query?: QueryCustomerDto) {
+    const { page, limit, skip } = calculatePagination(query);
+
+    const where: Prisma.CustomerWhereInput = {
+      ...(tenantId ? { tenantId } : {}),
+      ...(query?.hasDebt ? { totalDebt: { gt: 0 } } : {}),
+      ...(query?.search
+        ? {
+            OR: [
+              { name: { contains: query.search, mode: 'insensitive' } },
+              { phoneNumber: { contains: query.search, mode: 'insensitive' } },
+              { email: { contains: query.search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+
+    const [total, data] = await Promise.all([
+      this.prisma.customer.count({ where }),
+      this.prisma.customer.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { name: query?.sortOrder === 'desc' ? 'desc' : 'asc' },
+      }),
+    ]);
+
+    return {
+      data,
+      meta: buildPaginationMeta(total, page, limit),
+    };
   }
 
   async getCustomerById(id: string): Promise<Customer> {
@@ -148,5 +179,35 @@ export class CustomerService {
         storeCreditBalance: newCredit,
       },
     });
+  }
+
+  /**
+   * Get Customer CRM KPI Summary Metrics
+   */
+  async getCustomerStats(tenantId?: string) {
+    const where: Prisma.CustomerWhereInput = {
+      ...(tenantId ? { tenantId } : {}),
+    };
+
+    const [aggregate, debtorsCount] = await Promise.all([
+      this.prisma.customer.aggregate({
+        where,
+        _sum: { totalDebt: true, storeCreditBalance: true },
+        _count: { id: true },
+      }),
+      this.prisma.customer.count({
+        where: {
+          ...where,
+          totalDebt: { gt: 0 },
+        },
+      }),
+    ]);
+
+    return {
+      totalCustomers: aggregate._count.id || 0,
+      totalDebt: Number(aggregate._sum.totalDebt || 0),
+      totalCredit: Number(aggregate._sum.storeCreditBalance || 0),
+      debtorsCount,
+    };
   }
 }

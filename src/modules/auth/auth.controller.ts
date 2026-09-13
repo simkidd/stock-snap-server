@@ -1,11 +1,13 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Patch,
   Post,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -15,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { User } from 'src/generated/prisma';
 import { Public } from 'src/common/decorators/public.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import {
   CreateNewPasswordInput,
   ForgotPasswordInput,
@@ -89,6 +92,40 @@ export class AuthController {
   }
 
   /**
+   * User logout
+   */
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'User logout' })
+  @ApiResponse({
+    status: 200,
+    description: 'User successfully logged out.',
+  })
+  @Post('/logout')
+  logout(
+    @CurrentUser() user: any,
+  ): Promise<{ success: boolean; message: string }> {
+    return this.authService.logout(user?.id);
+  }
+
+  /**
+   * Get currently authenticated user profile
+   */
+  @ApiBearerAuth('Authorization')
+  @ApiOperation({ summary: 'Get currently authenticated user profile' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the authenticated user profile.',
+  })
+  @Get('/me')
+  getMe(@CurrentUser() user: any): Promise<User> {
+    if (!user?.id) {
+      throw new UnauthorizedException('Authentication required');
+    }
+    return this.authService.getMe(user.id);
+  }
+
+  /**
    * Verify Manager PIN for counter overrides, voids, or discount authorizations
    */
   @HttpCode(HttpStatus.OK)
@@ -100,8 +137,10 @@ export class AuthController {
   })
   @ApiResponse({ status: 403, description: 'Forbidden: Invalid manager PIN.' })
   @Post('/verify-manager-pin')
-  verifyManagerPin(@Body() input: VerifyManagerPinInput, @Req() req: Request) {
-    const user = req['user'];
+  verifyManagerPin(
+    @Body() input: VerifyManagerPinInput,
+    @CurrentUser() user: any,
+  ) {
     return this.authService.verifyManagerPin(input, user?.tenantId);
   }
 
@@ -112,8 +151,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Set or update 4-digit PIN for staff' })
   @ApiResponse({ status: 200, description: 'PIN updated successfully.' })
   @Patch('/set-pin')
-  setPin(@Body() input: SetPinInput, @Req() req: Request) {
-    const user = req['user'];
+  setPin(@Body() input: SetPinInput, @CurrentUser() user: any) {
+    if (!user?.id) {
+      throw new UnauthorizedException('Authentication required');
+    }
     return this.authService.setPin(user.id, input);
   }
 

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -6,10 +6,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Public } from 'src/common/decorators/public.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { CustomerService } from './customer.service';
 import {
   AdjustCreditOrDebtInput,
   CreateCustomerInput,
+  QueryCustomerDto,
   UpdateCustomerInput,
 } from './dtos/customer.dto';
 
@@ -19,12 +21,23 @@ export class CustomerController {
   constructor(private readonly customerService: CustomerService) {}
 
   @Public()
-  @ApiOperation({ summary: 'Get all customers' })
-  @ApiResponse({ status: 200, description: 'Return all customers.' })
+  @ApiOperation({ summary: 'Get all customers with pagination & search' })
+  @ApiResponse({ status: 200, description: 'Return paginated customers.' })
   @Get()
-  getAllCustomers(@Req() req: Request) {
-    const tenantId = req['user']?.tenantId;
-    return this.customerService.getAllCustomers(tenantId);
+  getAllCustomers(
+    @CurrentUser() user: any,
+    @Query() query: QueryCustomerDto,
+  ) {
+    const tenantId = user?.tenantId;
+    return this.customerService.getAllCustomers(tenantId, query);
+  }
+
+  @Public()
+  @ApiOperation({ summary: 'Get customer CRM KPI metrics' })
+  @ApiResponse({ status: 200, description: 'Return customer debt & credit stats.' })
+  @Get('stats')
+  getCustomerStats(@CurrentUser() user: any) {
+    return this.customerService.getCustomerStats(user?.tenantId);
   }
 
   @Public()
@@ -36,9 +49,9 @@ export class CustomerController {
   @Get('phone/:phoneNumber')
   findByPhoneNumber(
     @Param('phoneNumber') phoneNumber: string,
-    @Req() req: Request,
+    @CurrentUser() user: any,
   ) {
-    const tenantId = req['user']?.tenantId;
+    const tenantId = user?.tenantId;
     return this.customerService.findByPhoneNumber(phoneNumber, tenantId);
   }
 
@@ -54,8 +67,8 @@ export class CustomerController {
   @ApiOperation({ summary: 'Create new customer' })
   @ApiResponse({ status: 201, description: 'Customer created successfully.' })
   @Post()
-  createCustomer(@Body() input: CreateCustomerInput, @Req() req: Request) {
-    const tenantId = req['user']?.tenantId;
+  createCustomer(@Body() input: CreateCustomerInput, @CurrentUser() user: any) {
+    const tenantId = user?.tenantId;
     return this.customerService.createCustomer(input, tenantId);
   }
 

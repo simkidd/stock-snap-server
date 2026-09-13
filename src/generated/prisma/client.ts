@@ -70,6 +70,11 @@ export type Customer = Prisma.CustomerModel
  */
 export type Product = Prisma.ProductModel
 /**
+ * Model ProductVariant
+ * 
+ */
+export type ProductVariant = Prisma.ProductVariantModel
+/**
  * Model Brand
  * 
  */

@@ -193,7 +193,9 @@ export class SalesAnalyticsService {
       select: {
         cashier: {
           select: {
-            name: true,
+            firstName: true,
+            middleName: true,
+            lastName: true,
           },
         },
         totalAmount: true,
@@ -203,7 +205,10 @@ export class SalesAnalyticsService {
     const salesBySalesperson: Record<string, Decimal> = {};
 
     sales.forEach((sale) => {
-      const salespersonName = sale.cashier.name;
+      const salespersonName =
+        [sale.cashier.firstName, sale.cashier.middleName, sale.cashier.lastName]
+          .filter(Boolean)
+          .join(' ') || 'Cashier';
       if (!salesBySalesperson[salespersonName]) {
         salesBySalesperson[salespersonName] = new Decimal(0);
       }

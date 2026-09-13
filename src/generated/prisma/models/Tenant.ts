@@ -29,7 +29,6 @@ export type TenantMinAggregateOutputType = {
   name: string | null
   slug: string | null
   currency: string | null
-  currencySymbol: string | null
   phone: string | null
   email: string | null
   address: string | null
@@ -48,7 +47,6 @@ export type TenantMaxAggregateOutputType = {
   name: string | null
   slug: string | null
   currency: string | null
-  currencySymbol: string | null
   phone: string | null
   email: string | null
   address: string | null
@@ -67,7 +65,6 @@ export type TenantCountAggregateOutputType = {
   name: number
   slug: number
   currency: number
-  currencySymbol: number
   phone: number
   email: number
   address: number
@@ -88,7 +85,6 @@ export type TenantMinAggregateInputType = {
   name?: true
   slug?: true
   currency?: true
-  currencySymbol?: true
   phone?: true
   email?: true
   address?: true
@@ -107,7 +103,6 @@ export type TenantMaxAggregateInputType = {
   name?: true
   slug?: true
   currency?: true
-  currencySymbol?: true
   phone?: true
   email?: true
   address?: true
@@ -126,7 +121,6 @@ export type TenantCountAggregateInputType = {
   name?: true
   slug?: true
   currency?: true
-  currencySymbol?: true
   phone?: true
   email?: true
   address?: true
@@ -218,7 +212,6 @@ export type TenantGroupByOutputType = {
   name: string
   slug: string
   currency: string
-  currencySymbol: string
   phone: string | null
   email: string | null
   address: string | null
@@ -258,7 +251,6 @@ export type TenantWhereInput = {
   name?: Prisma.StringFilter<"Tenant"> | string
   slug?: Prisma.StringFilter<"Tenant"> | string
   currency?: Prisma.StringFilter<"Tenant"> | string
-  currencySymbol?: Prisma.StringFilter<"Tenant"> | string
   phone?: Prisma.StringNullableFilter<"Tenant"> | string | null
   email?: Prisma.StringNullableFilter<"Tenant"> | string | null
   address?: Prisma.StringNullableFilter<"Tenant"> | string | null
@@ -289,7 +281,6 @@ export type TenantOrderByWithRelationInput = {
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   currency?: Prisma.SortOrder
-  currencySymbol?: Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
   address?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -323,7 +314,6 @@ export type TenantWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.TenantWhereInput | Prisma.TenantWhereInput[]
   name?: Prisma.StringFilter<"Tenant"> | string
   currency?: Prisma.StringFilter<"Tenant"> | string
-  currencySymbol?: Prisma.StringFilter<"Tenant"> | string
   phone?: Prisma.StringNullableFilter<"Tenant"> | string | null
   email?: Prisma.StringNullableFilter<"Tenant"> | string | null
   address?: Prisma.StringNullableFilter<"Tenant"> | string | null
@@ -354,7 +344,6 @@ export type TenantOrderByWithAggregationInput = {
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   currency?: Prisma.SortOrder
-  currencySymbol?: Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   email?: Prisma.SortOrderInput | Prisma.SortOrder
   address?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -379,7 +368,6 @@ export type TenantScalarWhereWithAggregatesInput = {
   name?: Prisma.StringWithAggregatesFilter<"Tenant"> | string
   slug?: Prisma.StringWithAggregatesFilter<"Tenant"> | string
   currency?: Prisma.StringWithAggregatesFilter<"Tenant"> | string
-  currencySymbol?: Prisma.StringWithAggregatesFilter<"Tenant"> | string
   phone?: Prisma.StringNullableWithAggregatesFilter<"Tenant"> | string | null
   email?: Prisma.StringNullableWithAggregatesFilter<"Tenant"> | string | null
   address?: Prisma.StringNullableWithAggregatesFilter<"Tenant"> | string | null
@@ -398,7 +386,6 @@ export type TenantCreateInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -429,7 +416,6 @@ export type TenantUncheckedCreateInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -460,7 +446,6 @@ export type TenantUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -491,7 +476,6 @@ export type TenantUncheckedUpdateInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -522,7 +506,6 @@ export type TenantCreateManyInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -541,7 +524,6 @@ export type TenantUpdateManyMutationInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -560,7 +542,6 @@ export type TenantUncheckedUpdateManyInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -579,7 +560,6 @@ export type TenantCountOrderByAggregateInput = {
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   currency?: Prisma.SortOrder
-  currencySymbol?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   email?: Prisma.SortOrder
   address?: Prisma.SortOrder
@@ -598,7 +578,6 @@ export type TenantMaxOrderByAggregateInput = {
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   currency?: Prisma.SortOrder
-  currencySymbol?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   email?: Prisma.SortOrder
   address?: Prisma.SortOrder
@@ -617,7 +596,6 @@ export type TenantMinOrderByAggregateInput = {
   name?: Prisma.SortOrder
   slug?: Prisma.SortOrder
   currency?: Prisma.SortOrder
-  currencySymbol?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   email?: Prisma.SortOrder
   address?: Prisma.SortOrder
@@ -828,7 +806,6 @@ export type TenantCreateWithoutStoresInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -858,7 +835,6 @@ export type TenantUncheckedCreateWithoutStoresInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -904,7 +880,6 @@ export type TenantUpdateWithoutStoresInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -934,7 +909,6 @@ export type TenantUncheckedUpdateWithoutStoresInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -964,7 +938,6 @@ export type TenantCreateWithoutRegistersInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -994,7 +967,6 @@ export type TenantUncheckedCreateWithoutRegistersInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1040,7 +1012,6 @@ export type TenantUpdateWithoutRegistersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1070,7 +1041,6 @@ export type TenantUncheckedUpdateWithoutRegistersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1100,7 +1070,6 @@ export type TenantCreateWithoutRegisterSessionsInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1130,7 +1099,6 @@ export type TenantUncheckedCreateWithoutRegisterSessionsInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1176,7 +1144,6 @@ export type TenantUpdateWithoutRegisterSessionsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1206,7 +1173,6 @@ export type TenantUncheckedUpdateWithoutRegisterSessionsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1236,7 +1202,6 @@ export type TenantCreateWithoutCustomersInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1266,7 +1231,6 @@ export type TenantUncheckedCreateWithoutCustomersInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1312,7 +1276,6 @@ export type TenantUpdateWithoutCustomersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1342,7 +1305,6 @@ export type TenantUncheckedUpdateWithoutCustomersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1372,7 +1334,6 @@ export type TenantCreateWithoutProductsInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1402,7 +1363,6 @@ export type TenantUncheckedCreateWithoutProductsInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1448,7 +1408,6 @@ export type TenantUpdateWithoutProductsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1478,7 +1437,6 @@ export type TenantUncheckedUpdateWithoutProductsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1508,7 +1466,6 @@ export type TenantCreateWithoutBrandsInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1538,7 +1495,6 @@ export type TenantUncheckedCreateWithoutBrandsInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1584,7 +1540,6 @@ export type TenantUpdateWithoutBrandsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1614,7 +1569,6 @@ export type TenantUncheckedUpdateWithoutBrandsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1644,7 +1598,6 @@ export type TenantCreateWithoutCategoriesInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1674,7 +1627,6 @@ export type TenantUncheckedCreateWithoutCategoriesInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1720,7 +1672,6 @@ export type TenantUpdateWithoutCategoriesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1750,7 +1701,6 @@ export type TenantUncheckedUpdateWithoutCategoriesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1780,7 +1730,6 @@ export type TenantCreateWithoutStockMovementsInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1810,7 +1759,6 @@ export type TenantUncheckedCreateWithoutStockMovementsInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1856,7 +1804,6 @@ export type TenantUpdateWithoutStockMovementsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1886,7 +1833,6 @@ export type TenantUncheckedUpdateWithoutStockMovementsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1916,7 +1862,6 @@ export type TenantCreateWithoutSalesInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1946,7 +1891,6 @@ export type TenantUncheckedCreateWithoutSalesInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -1992,7 +1936,6 @@ export type TenantUpdateWithoutSalesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2022,7 +1965,6 @@ export type TenantUncheckedUpdateWithoutSalesInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2052,7 +1994,6 @@ export type TenantCreateWithoutUsersInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -2082,7 +2023,6 @@ export type TenantUncheckedCreateWithoutUsersInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -2128,7 +2068,6 @@ export type TenantUpdateWithoutUsersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2158,7 +2097,6 @@ export type TenantUncheckedUpdateWithoutUsersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2188,7 +2126,6 @@ export type TenantCreateWithoutDiscountsInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -2218,7 +2155,6 @@ export type TenantUncheckedCreateWithoutDiscountsInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -2264,7 +2200,6 @@ export type TenantUpdateWithoutDiscountsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2294,7 +2229,6 @@ export type TenantUncheckedUpdateWithoutDiscountsInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2324,7 +2258,6 @@ export type TenantCreateWithoutSuppliersInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -2354,7 +2287,6 @@ export type TenantUncheckedCreateWithoutSuppliersInput = {
   name: string
   slug: string
   currency?: string
-  currencySymbol?: string
   phone?: string | null
   email?: string | null
   address?: string | null
@@ -2400,7 +2332,6 @@ export type TenantUpdateWithoutSuppliersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2430,7 +2361,6 @@ export type TenantUncheckedUpdateWithoutSuppliersInput = {
   name?: Prisma.StringFieldUpdateOperationsInput | string
   slug?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
-  currencySymbol?: Prisma.StringFieldUpdateOperationsInput | string
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   address?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2590,7 +2520,6 @@ export type TenantSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name?: boolean
   slug?: boolean
   currency?: boolean
-  currencySymbol?: boolean
   phone?: boolean
   email?: boolean
   address?: boolean
@@ -2622,7 +2551,6 @@ export type TenantSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   name?: boolean
   slug?: boolean
   currency?: boolean
-  currencySymbol?: boolean
   phone?: boolean
   email?: boolean
   address?: boolean
@@ -2641,7 +2569,6 @@ export type TenantSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   name?: boolean
   slug?: boolean
   currency?: boolean
-  currencySymbol?: boolean
   phone?: boolean
   email?: boolean
   address?: boolean
@@ -2660,7 +2587,6 @@ export type TenantSelectScalar = {
   name?: boolean
   slug?: boolean
   currency?: boolean
-  currencySymbol?: boolean
   phone?: boolean
   email?: boolean
   address?: boolean
@@ -2674,7 +2600,7 @@ export type TenantSelectScalar = {
   updatedAt?: boolean
 }
 
-export type TenantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "currency" | "currencySymbol" | "phone" | "email" | "address" | "city" | "state" | "country" | "cacNumber" | "vatTIN" | "logoUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["tenant"]>
+export type TenantOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "slug" | "currency" | "phone" | "email" | "address" | "city" | "state" | "country" | "cacNumber" | "vatTIN" | "logoUrl" | "createdAt" | "updatedAt", ExtArgs["result"]["tenant"]>
 export type TenantInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   stores?: boolean | Prisma.Tenant$storesArgs<ExtArgs>
   users?: boolean | Prisma.Tenant$usersArgs<ExtArgs>
@@ -2714,7 +2640,6 @@ export type $TenantPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     name: string
     slug: string
     currency: string
-    currencySymbol: string
     phone: string | null
     email: string | null
     address: string | null
@@ -3165,7 +3090,6 @@ export interface TenantFieldRefs {
   readonly name: Prisma.FieldRef<"Tenant", 'String'>
   readonly slug: Prisma.FieldRef<"Tenant", 'String'>
   readonly currency: Prisma.FieldRef<"Tenant", 'String'>
-  readonly currencySymbol: Prisma.FieldRef<"Tenant", 'String'>
   readonly phone: Prisma.FieldRef<"Tenant", 'String'>
   readonly email: Prisma.FieldRef<"Tenant", 'String'>
   readonly address: Prisma.FieldRef<"Tenant", 'String'>

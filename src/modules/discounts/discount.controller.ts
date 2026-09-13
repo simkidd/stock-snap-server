@@ -3,6 +3,7 @@ import { DiscountService } from './discount.service';
 import { Discount } from 'src/generated/prisma';
 import { CreateDiscountInput } from './dtos/discount.dto';
 import { Public } from 'src/common/decorators/public.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('discount')
@@ -15,8 +16,17 @@ export class DiscountController {
   @ApiOperation({ summary: 'Get all discounts' })
   @ApiResponse({ status: 200, description: 'Return all discounts' })
   @Get()
-  getDiscounts(): Promise<Discount[]> {
-    return this.discountService.getDiscounts();
+  getDiscounts(@CurrentUser() user: any): Promise<Discount[]> {
+    return this.discountService.getDiscounts(user?.tenantId);
+  }
+
+  // get discount stats
+  @Public()
+  @ApiOperation({ summary: 'Get discount campaign KPI metrics' })
+  @ApiResponse({ status: 200, description: 'Return discount statistics' })
+  @Get('stats')
+  getDiscountStats(@CurrentUser() user: any) {
+    return this.discountService.getDiscountStats(user?.tenantId);
   }
 
   // create a new discount

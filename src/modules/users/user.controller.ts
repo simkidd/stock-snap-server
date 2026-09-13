@@ -6,7 +6,7 @@ import {
   Patch,
   Post,
   Query,
-  Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -15,9 +15,9 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { User, UserRole } from 'src/generated/prisma';
-import { Request } from 'express';
 import { Public } from 'src/common/decorators/public.decorator';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { CurrentUser } from 'src/common/decorators/current-user.decorator';
 import {
   CreateUserInput,
   UpdateRoleInput,
@@ -49,14 +49,25 @@ export class UserController {
     return this.userService.getAllUsers();
   }
 
+  @Public()
+  @ApiOperation({ summary: 'Get staff roster KPI metrics' })
+  @ApiResponse({ status: 200, description: 'Return staff summary statistics.' })
+  @Get('stats')
+  getUserStats(@CurrentUser() user: any) {
+    return this.userService.getUserStats(user?.tenantId);
+  }
+
+  @ApiBearerAuth('Authorization')
   @ApiOperation({ summary: 'Get currently authenticated staff profile' })
   @ApiResponse({
     status: 200,
     description: 'Return authenticated user information.',
   })
   @Get('me')
-  getMe(@Req() req: Request) {
-    const user = req['user'];
+  getMe(@CurrentUser() user: any) {
+    if (!user?.id) {
+      throw new UnauthorizedException('Authentication required');
+    }
     return this.userService.getMe(user.id);
   }
 
