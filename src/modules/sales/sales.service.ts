@@ -58,7 +58,7 @@ export class SalesService {
         where,
         include: {
           saleItems: {
-            include: { product: true },
+            include: { product: true, variant: true },
           },
           cashier: {
             select: { id: true, firstName: true, middleName: true, lastName: true, email: true },
@@ -84,7 +84,7 @@ export class SalesService {
       where: { id },
       include: {
         saleItems: {
-          include: { product: true },
+          include: { product: true, variant: true },
         },
         cashier: {
           select: { id: true, firstName: true, middleName: true, lastName: true, email: true },
@@ -107,7 +107,7 @@ export class SalesService {
       where: { invoiceNo },
       include: {
         saleItems: {
-          include: { product: true },
+          include: { product: true, variant: true },
         },
         cashier: {
           select: { id: true, firstName: true, middleName: true, lastName: true, email: true },
@@ -152,158 +152,245 @@ export class SalesService {
         })
       )?.id;
 
-    // 2. Process checkout within atomic database transaction
-    return this.prisma.$transaction(async (tx) => {
-      let subTotalAmount = new Decimal(0);
-      let taxAmount = new Decimal(0);
-      let totalQuantity = 0;
-      const saleItemsToCreate = [];
+    // 2. Process checkout within atomic database transaction with extended timeout (30s)
+    return this.prisma.$transaction(
+      async (tx) => {
+        let subTotalAmount = new Decimal(0);
+        let taxAmount = new Decimal(0);
+        let totalQuantity = 0;
+        const saleItemsToCreate = [];
+        const stockMovementsToCreate = [];
+        const productUpdates = [];
+        const variantUpdates = [];
 
-      for (const item of input.items) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-        });
-        if (!product) {
-          throw new NotFoundException(
-            `Product with ID ${item.productId} not found`,
+        // Batch fetch all required products and variants in parallel
+        const productIds = input.items.map((i) => i.productId);
+        const variantIds = input.items
+          .map((i) => i.variantId)
+          .filter(Boolean) as string[];
+
+        const [products, variants] = await Promise.all([
+          tx.product.findMany({
+            where: { id: { in: productIds } },
+          }),
+          variantIds.length > 0
+            ? tx.productVariant.findMany({
+                where: { id: { in: variantIds } },
+              })
+            : [],
+        ]);
+
+        const productMap = new Map<string, (typeof products)[number]>();
+        for (const p of products) {
+          productMap.set(p.id, p);
+        }
+        const variantMap = new Map<string, (typeof variants)[number]>();
+        for (const v of variants) {
+          variantMap.set(v.id, v);
+        }
+
+        for (const item of input.items) {
+          const product = productMap.get(item.productId);
+          if (!product) {
+            throw new NotFoundException(
+              `Product with ID ${item.productId} not found`,
+            );
+          }
+
+          let unitPrice: Prisma.Decimal;
+          let costPrice = product.costPrice;
+          let description = product.name;
+
+          if (item.variantId) {
+            const variant = variantMap.get(item.variantId);
+            if (!variant) {
+              throw new NotFoundException(
+                `Product variant with ID ${item.variantId} not found`,
+              );
+            }
+
+            if (variant.quantity < item.quantity) {
+              throw new BadRequestException(
+                `Insufficient stock for "${product.name} (${variant.name})". Available: ${variant.quantity}, Requested: ${item.quantity}`,
+              );
+            }
+
+            unitPrice =
+              item.unitPrice !== undefined
+                ? new Decimal(item.unitPrice)
+                : new Decimal(variant.price);
+            costPrice = variant.costPrice;
+            description = `${product.name} - ${variant.name}`;
+
+            // Decrement variant stock
+            const newVariantQty = variant.quantity - item.quantity;
+            variantUpdates.push(
+              tx.productVariant.update({
+                where: { id: variant.id },
+                data: { quantity: newVariantQty },
+              }),
+            );
+          } else {
+            if (product.quantity < item.quantity) {
+              throw new BadRequestException(
+                `Insufficient stock for "${product.name}". Available: ${product.quantity}, Requested: ${item.quantity}`,
+              );
+            }
+
+            unitPrice =
+              item.unitPrice !== undefined
+                ? new Decimal(item.unitPrice)
+                : new Decimal(product.price);
+          }
+
+          const itemTotal = unitPrice.mul(item.quantity);
+          subTotalAmount = subTotalAmount.add(itemTotal);
+          totalQuantity += item.quantity;
+
+          // Calculate 7.5% Nigerian VAT on non-exempt products
+          if (!product.isTaxExempt) {
+            const itemTax = itemTotal.mul(0.075);
+            taxAmount = taxAmount.add(itemTax);
+          }
+
+          saleItemsToCreate.push({
+            productId: product.id,
+            variantId: item.variantId || null,
+            quantity: item.quantity,
+            unitPrice,
+            costPrice,
+            totalAmount: itemTotal,
+            description,
+          });
+
+          // Decrement parent product inventory
+          const newQuantity = Math.max(0, product.quantity - item.quantity);
+          let newStatus: ProductStatusEnum = ProductStatusEnum.AVAILABLE;
+          if (newQuantity === 0) {
+            newStatus = ProductStatusEnum.OUT;
+          } else if (newQuantity <= product.minimumQuantity) {
+            newStatus = ProductStatusEnum.LOW;
+          }
+
+          productUpdates.push(
+            tx.product.update({
+              where: { id: product.id },
+              data: {
+                quantity: newQuantity,
+                status: newStatus,
+              },
+            }),
           );
-        }
 
-        if (product.quantity < item.quantity) {
-          throw new BadRequestException(
-            `Insufficient stock for "${product.name}". Available: ${product.quantity}, Requested: ${item.quantity}`,
-          );
-        }
-
-        const unitPrice =
-          item.unitPrice !== undefined
-            ? new Decimal(item.unitPrice)
-            : new Decimal(product.price);
-        const itemTotal = unitPrice.mul(item.quantity);
-        subTotalAmount = subTotalAmount.add(itemTotal);
-        totalQuantity += item.quantity;
-
-        // Calculate 7.5% Nigerian VAT on non-exempt products
-        if (!product.isTaxExempt) {
-          const itemTax = itemTotal.mul(0.075);
-          taxAmount = taxAmount.add(itemTax);
-        }
-
-        saleItemsToCreate.push({
-          productId: product.id,
-          quantity: item.quantity,
-          unitPrice,
-          costPrice: product.costPrice,
-          totalAmount: itemTotal,
-          description: product.name,
-        });
-
-        // Decrement product inventory
-        const newQuantity = product.quantity - item.quantity;
-        let newStatus: ProductStatusEnum = ProductStatusEnum.AVAILABLE;
-        if (newQuantity === 0) {
-          newStatus = ProductStatusEnum.OUT;
-        } else if (newQuantity <= product.minimumQuantity) {
-          newStatus = ProductStatusEnum.LOW;
-        }
-
-        await tx.product.update({
-          where: { id: product.id },
-          data: {
-            quantity: newQuantity,
-            status: newStatus,
-          },
-        });
-
-        // Record stock movement audit log
-        await tx.stockMovement.create({
-          data: {
+          stockMovementsToCreate.push({
             tenantId: resolvedTenantId,
             storeId: resolvedStoreId,
             productId: product.id,
+            variantId: item.variantId || null,
             userId: user.id,
             type: StockMovementType.SALE,
             quantityChange: -item.quantity,
             reason: `Sold via POS checkout`,
-          },
-        });
-      }
+          });
+        }
 
-      // 3. Discount calculation
-      let discountAmount = new Decimal(0);
-      let discountId: string | null = null;
-      if (input.discountCode) {
-        const discount = await tx.discount.findFirst({
-          where: {
-            code: input.discountCode.toUpperCase(),
+        // Execute inventory decrements in parallel
+        await Promise.all([...productUpdates, ...variantUpdates]);
+
+        // Record stock movements
+        if (stockMovementsToCreate.length > 0) {
+          await tx.stockMovement.createMany({
+            data: stockMovementsToCreate,
+          });
+        }
+
+        // 3. Discount calculation
+        let discountAmount = new Decimal(0);
+        let discountId: string | null = null;
+        if (input.discountCode) {
+          const discount = await tx.discount.findFirst({
+            where: {
+              code: input.discountCode.toUpperCase(),
+              tenantId: resolvedTenantId,
+            },
+          });
+          if (discount) {
+            const now = new Date();
+            if (now >= discount.startDate && now <= discount.endDate) {
+              discountAmount = subTotalAmount.mul(discount.percentage).div(100);
+              discountId = discount.id;
+            }
+          }
+        }
+
+        // Final Net Total in Naira (₦)
+        const totalAmount = subTotalAmount.add(taxAmount).sub(discountAmount);
+
+        // 4. Cash Tendered & Change Due Calculation
+        let amountTenderedDecimal = new Decimal(input.amountTendered || 0);
+        let changeDue = new Decimal(0);
+
+        if (input.paymentMethod === PaymentMethodEnum.CASH) {
+          if (amountTenderedDecimal.greaterThan(0)) {
+            if (amountTenderedDecimal.lessThan(totalAmount)) {
+              throw new BadRequestException(
+                `Cash tendered (₦${amountTenderedDecimal}) is less than total payable (₦${totalAmount})`,
+              );
+            }
+            changeDue = amountTenderedDecimal.sub(totalAmount);
+          } else {
+            amountTenderedDecimal = totalAmount;
+            changeDue = new Decimal(0);
+          }
+        }
+
+        // 5. Generate Invoice Number (e.g. INV-2026-XXXX)
+        const invoiceNo = generateInvoiceNo();
+
+        // 6. Create Sales Record
+        const sale = await tx.sales.create({
+          data: {
+            invoiceNo,
             tenantId: resolvedTenantId,
+            storeId: resolvedStoreId,
+            registerSessionId: input.registerSessionId ?? null,
+            cashierId: userId,
+            customerId: input.customerId ?? null,
+            subTotalAmount,
+            taxAmount,
+            discountAmount,
+            totalAmount,
+            totalQuantity,
+            amountTendered: amountTenderedDecimal,
+            changeDue,
+            paymentMethod: input.paymentMethod,
+            paymentStatus: PaymentStatusEnum.PAID,
+            discountId,
+            note: input.note,
+            posNumber: input.posNumber || 'REG-01',
+            saleItems: {
+              create: saleItemsToCreate,
+            },
+          },
+          include: {
+            saleItems: {
+              include: {
+                product: true,
+                variant: true,
+              },
+            },
+            customer: true,
+            store: true,
+            tenant: true,
+            cashier: true,
+            paymentTransactions: true,
           },
         });
-        if (discount) {
-          const now = new Date();
-          if (now >= discount.startDate && now <= discount.endDate) {
-            discountAmount = subTotalAmount.mul(discount.percentage).div(100);
-            discountId = discount.id;
-          }
-        }
-      }
 
-      // Final Net Total in Naira (₦)
-      const totalAmount = subTotalAmount.add(taxAmount).sub(discountAmount);
-
-      // 4. Cash Tendered & Change Due Calculation
-      let amountTenderedDecimal = new Decimal(input.amountTendered || 0);
-      let changeDue = new Decimal(0);
-
-      if (input.paymentMethod === PaymentMethodEnum.CASH) {
-        if (amountTenderedDecimal.greaterThan(0)) {
-          if (amountTenderedDecimal.lessThan(totalAmount)) {
-            throw new BadRequestException(
-              `Cash tendered (₦${amountTenderedDecimal}) is less than total payable (₦${totalAmount})`,
-            );
-          }
-          changeDue = amountTenderedDecimal.sub(totalAmount);
-        } else {
-          amountTenderedDecimal = totalAmount;
-          changeDue = new Decimal(0);
-        }
-      }
-
-      // 5. Generate Invoice Number (e.g. INV-2026-XXXX)
-      const invoiceNo = generateInvoiceNo();
-
-      // 6. Create Sales Record
-      const sale = await tx.sales.create({
-        data: {
-          invoiceNo,
-          tenantId: resolvedTenantId,
-          storeId: resolvedStoreId,
-          registerSessionId: input.registerSessionId ?? null,
-          cashierId: userId,
-          customerId: input.customerId ?? null,
-          subTotalAmount,
-          taxAmount,
-          discountAmount,
-          totalAmount,
-          totalQuantity,
-          amountTendered: amountTenderedDecimal,
-          changeDue,
-          paymentMethod: input.paymentMethod,
-          paymentStatus: PaymentStatusEnum.PAID,
-          discountId,
-          note: input.note,
-          posNumber: input.posNumber || 'REG-01',
-          saleItems: {
-            create: saleItemsToCreate,
-          },
-        },
-      });
-
-      // 7. Record Payment Transactions (Single or Split)
-      if (input.payments && input.payments.length > 0) {
-        for (const payment of input.payments) {
-          await tx.paymentTransaction.create({
-            data: {
+        // 7. Record Payment Transactions (Single or Split)
+        if (input.payments && input.payments.length > 0) {
+          await tx.paymentTransaction.createMany({
+            data: input.payments.map((payment) => ({
               tenantId: resolvedTenantId,
               saleId: sale.id,
               paymentMethod: payment.paymentMethod,
@@ -313,49 +400,53 @@ export class SalesService {
               posTerminalName: payment.posTerminalName,
               posRrnNumber: payment.posRrnNumber,
               note: payment.note,
-            },
+            })),
           });
-        }
-      } else {
-        // Create single payment transaction
-        await tx.paymentTransaction.create({
-          data: {
-            tenantId: resolvedTenantId,
-            saleId: sale.id,
-            paymentMethod: input.paymentMethod,
-            amount: totalAmount,
-            note: `Full payment via ${input.paymentMethod}`,
-          },
-        });
-      }
-
-      // 8. Handle Customer Store Credit / Debt Ledger
-      if (input.customerId) {
-        const customer = await tx.customer.findUnique({
-          where: { id: input.customerId },
-        });
-        if (
-          customer &&
-          input.paymentMethod === PaymentMethodEnum.STORE_CREDIT
-        ) {
-          if (new Decimal(customer.storeCreditBalance).lessThan(totalAmount)) {
-            throw new BadRequestException(
-              `Customer has insufficient store credit balance.`,
-            );
-          }
-          await tx.customer.update({
-            where: { id: customer.id },
+        } else {
+          // Create single payment transaction
+          await tx.paymentTransaction.create({
             data: {
-              storeCreditBalance: new Decimal(customer.storeCreditBalance).sub(
-                totalAmount,
-              ),
+              tenantId: resolvedTenantId,
+              saleId: sale.id,
+              paymentMethod: input.paymentMethod,
+              amount: totalAmount,
+              note: `Full payment via ${input.paymentMethod}`,
             },
           });
         }
-      }
 
-      return sale;
-    });
+        // 8. Handle Customer Store Credit / Debt Ledger
+        if (input.customerId) {
+          const customer = await tx.customer.findUnique({
+            where: { id: input.customerId },
+          });
+          if (
+            customer &&
+            input.paymentMethod === PaymentMethodEnum.STORE_CREDIT
+          ) {
+            if (new Decimal(customer.storeCreditBalance).lessThan(totalAmount)) {
+              throw new BadRequestException(
+                `Customer has insufficient store credit balance.`,
+              );
+            }
+            await tx.customer.update({
+              where: { id: customer.id },
+              data: {
+                storeCreditBalance: new Decimal(customer.storeCreditBalance).sub(
+                  totalAmount,
+                ),
+              },
+            });
+          }
+        }
+
+        return sale;
+      },
+      {
+        maxWait: 10000,
+        timeout: 30000,
+      },
+    );
   }
 
   /**

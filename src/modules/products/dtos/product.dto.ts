@@ -117,6 +117,79 @@ export class CreateProductInput {
   @IsOptional()
   @IsString()
   supplierId?: string;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Whether product has multiple variants (sizes, colors)',
+  })
+  @IsOptional()
+  @IsBoolean()
+  hasVariants?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Configured option groups (e.g. Size, Color)',
+  })
+  @IsOptional()
+  options?: any;
+
+  @ApiPropertyOptional({
+    description: 'List of product variants with individual pricing and stock',
+  })
+  @IsOptional()
+  @IsArray()
+  variants?: CreateProductVariantDto[];
+}
+
+export class CreateProductVariantDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  id?: string;
+
+  @ApiProperty({ example: 'Black / Size 42' })
+  @IsString()
+  name: string;
+
+  @ApiProperty({ example: 'NK-PEG-BLK-42' })
+  @IsString()
+  sku: string;
+
+  @ApiPropertyOptional({ example: '08942019' })
+  @IsOptional()
+  @IsString()
+  barcode?: string;
+
+  @ApiPropertyOptional({ example: 30000 })
+  @IsOptional()
+  @IsNumber()
+  costPrice?: number;
+
+  @ApiProperty({ example: 45000 })
+  @IsNumber()
+  price: number;
+
+  @ApiProperty({ example: 15 })
+  @IsInt()
+  quantity: number;
+
+  @ApiPropertyOptional({ example: 5 })
+  @IsOptional()
+  @IsInt()
+  minimumQuantity?: number;
+
+  @ApiPropertyOptional({ example: 'https://...' })
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+
+  @ApiPropertyOptional({ example: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  @ApiPropertyOptional({ example: { Color: 'Black', Size: '42' } })
+  @IsOptional()
+  attributes?: any;
 }
 
 export class UpdateProductInput extends CreateProductInput {

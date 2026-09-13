@@ -57,6 +57,7 @@ export const ModelName = {
   RegisterSession: 'RegisterSession',
   Customer: 'Customer',
   Product: 'Product',
+  ProductVariant: 'ProductVariant',
   Brand: 'Brand',
   Category: 'Category',
   ProductImage: 'ProductImage',
@@ -177,24 +178,24 @@ export type CustomerScalarFieldEnum = (typeof CustomerScalarFieldEnum)[keyof typ
 
 export const ProductScalarFieldEnum = {
   id: 'id',
-  sku: 'sku',
-  barcode: 'barcode',
+  tenantId: 'tenantId',
   name: 'name',
   slug: 'slug',
-  size: 'size',
-  color: 'color',
-  expiryDate: 'expiryDate',
-  unit: 'unit',
-  piecesPerPack: 'piecesPerPack',
-  tags: 'tags',
   description: 'description',
+  tags: 'tags',
+  sku: 'sku',
+  barcode: 'barcode',
+  hasVariants: 'hasVariants',
+  options: 'options',
   costPrice: 'costPrice',
   price: 'price',
+  isTaxExempt: 'isTaxExempt',
   quantity: 'quantity',
   minimumQuantity: 'minimumQuantity',
-  isTaxExempt: 'isTaxExempt',
   status: 'status',
-  tenantId: 'tenantId',
+  unit: 'unit',
+  piecesPerPack: 'piecesPerPack',
+  expiryDate: 'expiryDate',
   categoryId: 'categoryId',
   brandId: 'brandId',
   supplierId: 'supplierId',
@@ -205,6 +206,26 @@ export const ProductScalarFieldEnum = {
 } as const
 
 export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeof ProductScalarFieldEnum]
+
+
+export const ProductVariantScalarFieldEnum = {
+  id: 'id',
+  productId: 'productId',
+  name: 'name',
+  sku: 'sku',
+  barcode: 'barcode',
+  imageUrl: 'imageUrl',
+  costPrice: 'costPrice',
+  price: 'price',
+  quantity: 'quantity',
+  minimumQuantity: 'minimumQuantity',
+  isActive: 'isActive',
+  attributes: 'attributes',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ProductVariantScalarFieldEnum = (typeof ProductVariantScalarFieldEnum)[keyof typeof ProductVariantScalarFieldEnum]
 
 
 export const BrandScalarFieldEnum = {
@@ -252,6 +273,7 @@ export const StockMovementScalarFieldEnum = {
   tenantId: 'tenantId',
   storeId: 'storeId',
   productId: 'productId',
+  variantId: 'variantId',
   userId: 'userId',
   type: 'type',
   quantityChange: 'quantityChange',
@@ -293,6 +315,7 @@ export const SaleItemScalarFieldEnum = {
   id: 'id',
   saleId: 'saleId',
   productId: 'productId',
+  variantId: 'variantId',
   quantity: 'quantity',
   unitPrice: 'unitPrice',
   costPrice: 'costPrice',
@@ -396,6 +419,14 @@ export const SortOrder = {
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder]
 
 
+export const NullableJsonNullValueInput = {
+  DbNull: DbNull,
+  JsonNull: JsonNull
+} as const
+
+export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
 export const QueryMode = {
   default: 'default',
   insensitive: 'insensitive'
@@ -410,4 +441,13 @@ export const NullsOrder = {
 } as const
 
 export type NullsOrder = (typeof NullsOrder)[keyof typeof NullsOrder]
+
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull
+} as const
+
+export type JsonNullValueFilter = (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter]
 

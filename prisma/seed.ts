@@ -9,9 +9,9 @@ const adapter = new PrismaNeon({
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log('🌱 Starting StockSnap Nigerian Retail POS database seeding...');
+  console.log('🌱 Starting comprehensive StockSnap Nigerian Retail POS database seeding...');
 
-  // 1. Clean existing data in logical order (if any)
+  // 1. Clean existing data in logical reverse-dependency order
   try {
     await prisma.paymentTransaction.deleteMany();
     await prisma.saleItem.deleteMany();
@@ -20,6 +20,7 @@ async function main() {
     await prisma.register.deleteMany();
     await prisma.stockMovement.deleteMany();
     await prisma.productImage.deleteMany();
+    await prisma.productVariant.deleteMany();
     await prisma.product.deleteMany();
     await prisma.category.deleteMany();
     await prisma.brand.deleteMany();
@@ -30,8 +31,9 @@ async function main() {
     await prisma.user.deleteMany();
     await prisma.store.deleteMany();
     await prisma.tenant.deleteMany();
+    console.log('🧹 Cleaned existing tables successfully.');
   } catch (e) {
-    console.log('Tables may already be empty, proceeding...');
+    console.log('Notice: Tables may have been empty, proceeding...');
   }
 
   // 2. Create Tenant (Port Harcourt, Rivers State)
@@ -91,11 +93,13 @@ async function main() {
   });
   console.log(`✅ Created Registers: ${reg1.code}, ${reg2.code}`);
 
-  // 5. Create Staff Accounts with Passwords and 4-digit PINs in dedicated Auth model
+  // 5. Create Staff Accounts with Passwords and 4-digit PINs
   const passwordHash = await bcrypt.hash('Password123!', 10);
   const adminPinHash = await bcrypt.hash('1234', 10);
   const managerPinHash = await bcrypt.hash('9999', 10);
   const cashierPinHash = await bcrypt.hash('0000', 10);
+  const inventoryPinHash = await bcrypt.hash('5555', 10);
+  const accountantPinHash = await bcrypt.hash('7777', 10);
 
   const adminUser = await prisma.user.create({
     data: {
@@ -159,31 +163,109 @@ async function main() {
       },
     },
   });
-  console.log(`✅ Created Staff: Admin (${adminUser.email}), Manager (${managerUser.email}), Cashier (${cashierUser.email})`);
 
-  // 6. Categories & Subcategories (Unified Self-referential Category Model)
-  const catGroceries = await prisma.category.create({
+  const inventoryUser = await prisma.user.create({
     data: {
       tenantId: tenant.id,
-      name: 'Groceries & Foods',
-      slug: 'groceries-foods',
+      storeId: store.id,
+      firstName: 'Emeka',
+      middleName: 'David',
+      lastName: 'Nwachukwu',
+      email: 'inventory@stocksnap.ng',
+      role: UserRole.INVENTORY_CONTROLLER,
+      gender: 'Male',
+      phoneNumber: '+234 803 000 0004',
+      auth: {
+        create: {
+          password: passwordHash,
+          pinCode: inventoryPinHash,
+          isEmailVerified: true,
+        },
+      },
     },
+  });
+
+  const accountantUser = await prisma.user.create({
+    data: {
+      tenantId: tenant.id,
+      storeId: store.id,
+      firstName: 'Fatima',
+      middleName: 'Zainab',
+      lastName: 'Bello',
+      email: 'accounts@stocksnap.ng',
+      role: UserRole.ACCOUNTANT,
+      gender: 'Female',
+      phoneNumber: '+234 803 000 0005',
+      auth: {
+        create: {
+          password: passwordHash,
+          pinCode: accountantPinHash,
+          isEmailVerified: true,
+        },
+      },
+    },
+  });
+  console.log(
+    `✅ Created Staff: Admin (${adminUser.email}), Manager (${managerUser.email}), Cashier (${cashierUser.email}), Inventory (${inventoryUser.email}), Accountant (${accountantUser.email})`
+  );
+
+  // 6. Create Suppliers
+  const supplierDangote = await prisma.supplier.create({
+    data: {
+      tenantId: tenant.id,
+      name: 'Dangote Distribution Hub Ltd',
+      slug: 'dangote-distribution-hub',
+      contactPhone: '08031234567',
+      contactAddress: 'Plot 14, Trans-Amadi Industrial Layout, Port Harcourt',
+    },
+  });
+
+  const supplierNestle = await prisma.supplier.create({
+    data: {
+      tenantId: tenant.id,
+      name: 'Nestle Nigeria Plc Direct Logistics',
+      slug: 'nestle-nigeria-logistics',
+      contactPhone: '08098765432',
+      contactAddress: 'Aba Road Depot, Port Harcourt',
+    },
+  });
+
+  const supplierCocaCola = await prisma.supplier.create({
+    data: {
+      tenantId: tenant.id,
+      name: 'NBC Coca-Cola Bottling Depot',
+      slug: 'nbc-coca-cola-depot',
+      contactPhone: '08023456789',
+      contactAddress: 'Trans-Amadi Central Bottling Plant, Port Harcourt',
+    },
+  });
+
+  const supplierFriesland = await prisma.supplier.create({
+    data: {
+      tenantId: tenant.id,
+      name: 'FrieslandCampina WAMCO Distributor',
+      slug: 'frieslandcampina-wamco-dist',
+      contactPhone: '08056789012',
+      contactAddress: 'Wharf Road Cold Hub, Port Harcourt',
+    },
+  });
+  console.log('✅ Created 4 Verified FMCG Suppliers');
+
+  // 7. Categories & Subcategories
+  const catGroceries = await prisma.category.create({
+    data: { tenantId: tenant.id, name: 'Groceries & Foods', slug: 'groceries-foods' },
   });
 
   const catBeverages = await prisma.category.create({
-    data: {
-      tenantId: tenant.id,
-      name: 'Drinks & Beverages',
-      slug: 'drinks-beverages',
-    },
+    data: { tenantId: tenant.id, name: 'Drinks & Beverages', slug: 'drinks-beverages' },
   });
 
   const catToiletries = await prisma.category.create({
-    data: {
-      tenantId: tenant.id,
-      name: 'Toiletries & Household',
-      slug: 'toiletries-household',
-    },
+    data: { tenantId: tenant.id, name: 'Toiletries & Household', slug: 'toiletries-household' },
+  });
+
+  const catApparel = await prisma.category.create({
+    data: { tenantId: tenant.id, name: 'Apparel & Footwear', slug: 'apparel-footwear' },
   });
 
   const subPackaged = await prisma.category.create({
@@ -213,7 +295,17 @@ async function main() {
     },
   });
 
-  // 7. Brands
+  const subSneakers = await prisma.category.create({
+    data: {
+      tenantId: tenant.id,
+      name: 'Sneakers & Shoes',
+      slug: 'sneakers-shoes',
+      parentId: catApparel.id,
+    },
+  });
+  console.log('✅ Created Product Categories and Hierarchical Subcategories');
+
+  // 8. Brands
   const brandNestle = await prisma.brand.create({
     data: { tenantId: tenant.id, name: 'Nestle', slug: 'nestle' },
   });
@@ -229,9 +321,13 @@ async function main() {
   const brandReckitt = await prisma.brand.create({
     data: { tenantId: tenant.id, name: 'Reckitt (Dettol)', slug: 'dettol' },
   });
+  const brandNike = await prisma.brand.create({
+    data: { tenantId: tenant.id, name: 'Nike Sportswear', slug: 'nike' },
+  });
+  console.log('✅ Created 6 Trademark Brands');
 
-  // 8. Products with Barcodes, Naira Cost/Selling Prices, Break-Bulk
-  const productsData = [
+  // 9. Standard Single FMCG Products
+  const singleProducts = [
     {
       sku: 'SKU-GM-1KG',
       barcode: '8901030382910',
@@ -243,8 +339,10 @@ async function main() {
       minimumQuantity: 10,
       unit: 'Pack',
       piecesPerPack: 1,
+      isTaxExempt: false,
       categoryId: subPackaged.id,
       brandId: brandNestle.id,
+      supplierId: supplierNestle.id,
       addedById: adminUser.id,
       tags: ['breakfast', 'cereal', 'nestle'],
       description: 'Nestle Golden Morn Maize & Soya Protein Cereal 1kg',
@@ -260,11 +358,13 @@ async function main() {
       minimumQuantity: 24,
       unit: 'Tin',
       piecesPerPack: 1,
+      isTaxExempt: true, // Zero-rated raw food / milk commodity under Nigerian VAT
       categoryId: subPackaged.id,
       brandId: brandFriesland.id,
+      supplierId: supplierFriesland.id,
       addedById: adminUser.id,
-      tags: ['dairy', 'milk', 'breakfast'],
-      description: 'Peak Full Cream Evaporated Milk 150g Tin',
+      tags: ['dairy', 'milk', 'breakfast', 'tax-exempt'],
+      description: 'Peak Full Cream Evaporated Milk 150g Tin - Zero Rated VAT',
     },
     {
       sku: 'SKU-INDO-CTN-40',
@@ -277,8 +377,10 @@ async function main() {
       minimumQuantity: 5,
       unit: 'Carton',
       piecesPerPack: 40,
+      isTaxExempt: false,
       categoryId: subPackaged.id,
       brandId: brandDufil.id,
+      supplierId: supplierDangote.id,
       addedById: adminUser.id,
       tags: ['noodles', 'carton', 'wholesale'],
       description: 'Indomie Instant Noodles Super Pack Onion Chicken Flavour 40x120g Carton',
@@ -294,8 +396,10 @@ async function main() {
       minimumQuantity: 40,
       unit: 'Piece',
       piecesPerPack: 1,
+      isTaxExempt: false,
       categoryId: subPackaged.id,
       brandId: brandDufil.id,
+      supplierId: supplierDangote.id,
       addedById: adminUser.id,
       tags: ['noodles', 'single', 'retail'],
       description: 'Indomie Instant Noodles Super Pack Onion Chicken Flavour 120g Single',
@@ -311,8 +415,10 @@ async function main() {
       minimumQuantity: 24,
       unit: 'Bottle',
       piecesPerPack: 1,
+      isTaxExempt: false,
       categoryId: subSoftDrinks.id,
       brandId: brandCocaCola.id,
+      supplierId: supplierCocaCola.id,
       addedById: adminUser.id,
       tags: ['drink', 'soda', 'coke'],
       description: 'Refreshing Coca-Cola Original Taste 50cl Pet Bottle',
@@ -328,8 +434,10 @@ async function main() {
       minimumQuantity: 30,
       unit: 'Bottle',
       piecesPerPack: 1,
+      isTaxExempt: true, // Basic potable water zero-rated
       categoryId: subSoftDrinks.id,
       brandId: brandCocaCola.id,
+      supplierId: supplierCocaCola.id,
       addedById: adminUser.id,
       tags: ['water', 'hydration', 'drinks'],
       description: 'Eva Pure Drinking Table Water 75cl Bottle',
@@ -345,15 +453,17 @@ async function main() {
       minimumQuantity: 8,
       unit: 'Bottle',
       piecesPerPack: 1,
+      isTaxExempt: false,
       categoryId: subHygiene.id,
       brandId: brandReckitt.id,
+      supplierId: supplierNestle.id,
       addedById: adminUser.id,
       tags: ['antiseptic', 'hygiene', 'dettol'],
       description: 'Dettol Original Disinfectant Liquid 250ml',
     },
   ];
 
-  for (const prod of productsData) {
+  for (const prod of singleProducts) {
     await prisma.product.create({
       data: {
         tenantId: tenant.id,
@@ -367,8 +477,11 @@ async function main() {
         minimumQuantity: prod.minimumQuantity,
         unit: prod.unit,
         piecesPerPack: prod.piecesPerPack,
+        isTaxExempt: prod.isTaxExempt,
+        hasVariants: false,
         categoryId: prod.categoryId,
         brandId: prod.brandId,
+        supplierId: prod.supplierId,
         addedById: prod.addedById,
         tags: prod.tags,
         description: prod.description,
@@ -376,9 +489,157 @@ async function main() {
       },
     });
   }
-  console.log(`✅ Seeded ${productsData.length} retail products with Nigerian Naira (₦) pricing and barcodes.`);
+  console.log(`✅ Seeded ${singleProducts.length} standard FMCG products with Nigerian Naira (₦) pricing.`);
 
-  // 9. Customers (Loyal Customer with Credit & Phone lookup)
+  // 10. Multi-Variant Matrix Products (e.g. Nike Air Force 1 with Sizes & Colors)
+  const variantOptions = [
+    { name: 'Size', values: ['41', '42', '43', '44'] },
+    { name: 'Color', values: ['Triple White', 'Black/White'] },
+  ];
+
+  const nikeSneaker = await prisma.product.create({
+    data: {
+      tenantId: tenant.id,
+      sku: 'PRD-NK-AF1',
+      barcode: '8909876543210',
+      name: "Nike Air Force 1 '07 Sneakers",
+      slug: 'nike-air-force-1-07-sneakers',
+      costPrice: 45000,
+      price: 65000,
+      quantity: 48, // Sum of all 8 variant quantities (6 each)
+      minimumQuantity: 10,
+      unit: 'Pair',
+      piecesPerPack: 1,
+      isTaxExempt: false,
+      hasVariants: true,
+      options: variantOptions,
+      categoryId: subSneakers.id,
+      brandId: brandNike.id,
+      supplierId: supplierDangote.id,
+      addedById: adminUser.id,
+      tags: ['sneakers', 'nike', 'airforce', 'fashion'],
+      description: 'Classic Nike Air Force 1 Low streetwear leather sneakers with padded collar.',
+      status: ProductStatusEnum.AVAILABLE,
+      variants: {
+        create: [
+          {
+            name: "Nike Air Force 1 - Size 41 / Triple White",
+            sku: 'NK-AF1-WHT-41',
+            barcode: '890111114101',
+            costPrice: 45000,
+            price: 65000,
+            quantity: 6,
+            minimumQuantity: 2,
+            attributes: { Size: '41', Color: 'Triple White' },
+          },
+          {
+            name: "Nike Air Force 1 - Size 42 / Triple White",
+            sku: 'NK-AF1-WHT-42',
+            barcode: '890111114201',
+            costPrice: 45000,
+            price: 65000,
+            quantity: 8,
+            minimumQuantity: 2,
+            attributes: { Size: '42', Color: 'Triple White' },
+          },
+          {
+            name: "Nike Air Force 1 - Size 43 / Triple White",
+            sku: 'NK-AF1-WHT-43',
+            barcode: '890111114301',
+            costPrice: 45000,
+            price: 68000, // Premium size pricing
+            quantity: 6,
+            minimumQuantity: 2,
+            attributes: { Size: '43', Color: 'Triple White' },
+          },
+          {
+            name: "Nike Air Force 1 - Size 44 / Triple White",
+            sku: 'NK-AF1-WHT-44',
+            barcode: '890111114401',
+            costPrice: 45000,
+            price: 68000,
+            quantity: 4,
+            minimumQuantity: 2,
+            attributes: { Size: '44', Color: 'Triple White' },
+          },
+          {
+            name: "Nike Air Force 1 - Size 41 / Black/White",
+            sku: 'NK-AF1-BLK-41',
+            barcode: '890111114102',
+            costPrice: 45000,
+            price: 65000,
+            quantity: 6,
+            minimumQuantity: 2,
+            attributes: { Size: '41', Color: 'Black/White' },
+          },
+          {
+            name: "Nike Air Force 1 - Size 42 / Black/White",
+            sku: 'NK-AF1-BLK-42',
+            barcode: '890111114202',
+            costPrice: 45000,
+            price: 65000,
+            quantity: 8,
+            minimumQuantity: 2,
+            attributes: { Size: '42', Color: 'Black/White' },
+          },
+          {
+            name: "Nike Air Force 1 - Size 43 / Black/White",
+            sku: 'NK-AF1-BLK-43',
+            barcode: '890111114302',
+            costPrice: 45000,
+            price: 68000,
+            quantity: 6,
+            minimumQuantity: 2,
+            attributes: { Size: '43', Color: 'Black/White' },
+          },
+          {
+            name: "Nike Air Force 1 - Size 44 / Black/White",
+            sku: 'NK-AF1-BLK-44',
+            barcode: '890111114402',
+            costPrice: 45000,
+            price: 68000,
+            quantity: 4,
+            minimumQuantity: 2,
+            attributes: { Size: '44', Color: 'Black/White' },
+          },
+        ],
+      },
+    },
+  });
+  console.log(`✅ Seeded Matrix Variant Product: ${nikeSneaker.name} with 8 live variations.`);
+
+  // 11. Discounts & Promo Campaigns
+  await prisma.discount.createMany({
+    data: [
+      {
+        tenantId: tenant.id,
+        code: 'FLASH10',
+        description: 'Storewide 10% Flash Discount',
+        percentage: 10,
+        startDate: new Date('2026-01-01'),
+        endDate: new Date('2026-12-31'),
+      },
+      {
+        tenantId: tenant.id,
+        code: 'EASTER15',
+        description: 'Easter Festive Promo 15% Off',
+        percentage: 15,
+        startDate: new Date('2026-03-01'),
+        endDate: new Date('2026-05-01'),
+      },
+      {
+        tenantId: tenant.id,
+        code: 'VIP20',
+        description: 'VIP Executive Loyalty 20% Rebate',
+        percentage: 20,
+        startDate: new Date('2026-01-01'),
+        endDate: new Date('2026-12-31'),
+      },
+    ],
+  });
+  console.log('✅ Seeded 3 Active Promotional Discounts');
+
+  // 12. Customers (Loyal Customer with Credit & Phone lookup)
   const customer1 = await prisma.customer.create({
     data: {
       tenantId: tenant.id,
@@ -386,7 +647,7 @@ async function main() {
       phoneNumber: '08035551234',
       email: 'emeka.okoye@gmail.com',
       address: 'Plot 4, Old GRA, Port Harcourt',
-      storeCreditBalance: 1500, // ₦1,500 stored balance from previous change
+      storeCreditBalance: 1500, // ₦1,500 stored balance
       totalDebt: 0,
       debtLimit: 50000,
     },
@@ -400,7 +661,7 @@ async function main() {
       email: 'nnenna.george@unport.edu.ng',
       address: 'Choba, Port Harcourt',
       storeCreditBalance: 0,
-      totalDebt: 0,
+      totalDebt: 5000, // ₦5,000 receivables ledger balance
       debtLimit: 100000,
     },
   });
@@ -410,9 +671,11 @@ async function main() {
   console.log('-------------------------------------------------------------------------');
   console.log('Tenant: StockSnap Supermarket Ltd (Port Harcourt, Rivers State)');
   console.log('Login Credentials:');
-  console.log('  👑 Admin:   admin@stocksnap.ng   | Password: Password123! | PIN: 1234');
-  console.log('  👔 Manager: manager@stocksnap.ng | Password: Password123! | PIN: 9999');
-  console.log('  🛒 Cashier: cashier@stocksnap.ng | Password: Password123! | PIN: 0000');
+  console.log('  👑 Admin:     admin@stocksnap.ng     | Password: Password123! | PIN: 1234');
+  console.log('  👔 Manager:   manager@stocksnap.ng   | Password: Password123! | PIN: 9999');
+  console.log('  🛒 Cashier:   cashier@stocksnap.ng   | Password: Password123! | PIN: 0000');
+  console.log('  📦 Inventory: inventory@stocksnap.ng | Password: Password123! | PIN: 5555');
+  console.log('  💼 Accounts:  accounts@stocksnap.ng  | Password: Password123! | PIN: 7777');
   console.log('-------------------------------------------------------------------------');
 }
 

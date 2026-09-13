@@ -50,6 +50,7 @@ export class ProductService {
           images: true,
           category: true,
           brand: true,
+          variants: true,
         },
         skip,
         take: limit,
@@ -71,6 +72,7 @@ export class ProductService {
         category: true,
         brand: true,
         Supplier: true,
+        variants: true,
       },
     });
     if (!product) {
@@ -83,17 +85,43 @@ export class ProductService {
     barcode: string,
     tenantId?: string,
   ): Promise<Product> {
-    const product = await this.prisma.product.findFirst({
+    const cleanBarcode = barcode.trim();
+    // First try finding directly by product barcode
+    let product = await this.prisma.product.findFirst({
       where: {
-        barcode: barcode.trim(),
+        barcode: cleanBarcode,
         ...(tenantId ? { tenantId } : {}),
       },
       include: {
         images: true,
         category: true,
         brand: true,
+        variants: true,
       },
     });
+
+    // If not found, check if barcode matches any product variant
+    if (!product) {
+      const variant = await this.prisma.productVariant.findFirst({
+        where: {
+          barcode: cleanBarcode,
+          ...(tenantId ? { product: { tenantId } } : {}),
+        },
+        include: {
+          product: {
+            include: {
+              images: true,
+              category: true,
+              brand: true,
+              variants: true,
+            },
+          },
+        },
+      });
+      if (variant?.product) {
+        product = variant.product;
+      }
+    }
 
     if (!product) {
       throw new NotFoundException(`No product found with barcode "${barcode}"`);
@@ -115,6 +143,7 @@ export class ProductService {
         category: true,
         brand: true,
         Supplier: true,
+        variants: true,
       },
       orderBy: { quantity: 'asc' },
     });
@@ -145,12 +174,24 @@ export class ProductService {
           { barcode: { contains: cleanQuery, mode: 'insensitive' } },
           { sku: { contains: cleanQuery, mode: 'insensitive' } },
           { tags: { has: cleanQuery.toLowerCase() } },
+          {
+            variants: {
+              some: {
+                OR: [
+                  { name: { contains: cleanQuery, mode: 'insensitive' } },
+                  { sku: { contains: cleanQuery, mode: 'insensitive' } },
+                  { barcode: { contains: cleanQuery, mode: 'insensitive' } },
+                ],
+              },
+            },
+          },
         ],
       },
       include: {
         images: true,
         category: true,
         brand: true,
+        variants: true,
       },
       take: 50,
       orderBy: { createdAt: 'desc' },
@@ -184,19 +225,39 @@ export class ProductService {
       );
     }
 
+    const hasVariants = Boolean(input.hasVariants && input.variants && input.variants.length > 0);
+    let totalQuantity = input.quantity ?? 0;
+    let sellingPrice = input.price ?? 0;
+    let costPrice = input.costPrice ?? 0;
+
+    if (hasVariants && input.variants) {
+      totalQuantity = input.variants.reduce((acc, v) => acc + Number(v.quantity || 0), 0);
+      if (input.variants.length > 0) {
+        const prices = input.variants.map((v) => Number(v.price || 0));
+        const costPrices = input.variants.map((v) => Number(v.costPrice || 0));
+        sellingPrice = Math.min(...prices);
+        costPrice = Math.min(...costPrices);
+      }
+    }
+
     let status: ProductStatusEnum = ProductStatusEnum.AVAILABLE;
-    if (input.quantity === 0) {
+    if (totalQuantity === 0) {
       status = ProductStatusEnum.OUT;
-    } else if (input.quantity <= input.minimumQuantity) {
+    } else if (totalQuantity <= (input.minimumQuantity ?? 5)) {
       status = ProductStatusEnum.LOW;
     }
 
     const categoryId = input.categoryId || input.productCategoryId;
-    const { productCategoryId: _productCategoryId, ...restInput } = input;
+    const { productCategoryId: _productCategoryId, variants, ...restInput } = input;
 
     const product = await this.prisma.product.create({
       data: {
         ...restInput,
+        hasVariants,
+        options: input.options ? (input.options as any) : undefined,
+        price: sellingPrice,
+        costPrice,
+        quantity: totalQuantity,
         categoryId: categoryId,
         tenantId: resolvedTenantId,
         name,
@@ -204,10 +265,29 @@ export class ProductService {
         status,
         addedById: userId,
         updatedById: userId,
+        ...(hasVariants && variants && variants.length > 0
+          ? {
+              variants: {
+                create: variants.map((v) => ({
+                  name: v.name,
+                  sku: v.sku || `${input.sku}-${slugify(v.name)}`,
+                  barcode: v.barcode || null,
+                  imageUrl: v.imageUrl || null,
+                  costPrice: v.costPrice ?? costPrice,
+                  price: v.price ?? sellingPrice,
+                  quantity: v.quantity ?? 0,
+                  minimumQuantity: v.minimumQuantity ?? 5,
+                  isActive: v.isActive !== undefined ? v.isActive : true,
+                  attributes: v.attributes ? (v.attributes as any) : undefined,
+                })),
+              },
+            }
+          : {}),
       },
       include: {
         category: true,
         brand: true,
+        variants: true,
       },
     });
 
@@ -220,21 +300,87 @@ export class ProductService {
   ): Promise<Product> {
     const existingProduct = await this.prisma.product.findUnique({
       where: { id: input.id },
+      include: { variants: true },
     });
     if (!existingProduct) {
       throw new NotFoundException('Product not found');
     }
 
-    const name = input.name.trim();
+    const name = input.name ? input.name.trim() : existingProduct.name;
     const slug = slugify(name);
 
     const categoryId = input.categoryId || input.productCategoryId;
-    const { productCategoryId: _productCategoryId, ...restInput } = input;
+    const { productCategoryId: _productCategoryId, variants, ...restInput } = input;
+
+    const hasVariants = input.hasVariants !== undefined ? input.hasVariants : existingProduct.hasVariants;
+    let totalQuantity = input.quantity !== undefined ? input.quantity : existingProduct.quantity;
+    let sellingPrice = input.price !== undefined ? input.price : existingProduct.price;
+
+    // Handle variant updates if variants are passed
+    if (hasVariants && variants) {
+      totalQuantity = variants.reduce((acc, v) => acc + Number(v.quantity || 0), 0);
+      if (variants.length > 0) {
+        sellingPrice = Math.min(...variants.map((v) => Number(v.price || 0)));
+      }
+
+      // Upsert/recreate variants inside a transaction
+      await this.prisma.$transaction(async (tx) => {
+        // Delete variants not in incoming list
+        const incomingIds = variants.filter((v) => v.id).map((v) => v.id as string);
+        await tx.productVariant.deleteMany({
+          where: {
+            productId: input.id,
+            id: { notIn: incomingIds },
+          },
+        });
+
+        // Upsert incoming variants
+        for (const v of variants) {
+          if (v.id) {
+            await tx.productVariant.update({
+              where: { id: v.id },
+              data: {
+                name: v.name,
+                sku: v.sku,
+                barcode: v.barcode || null,
+                imageUrl: v.imageUrl || null,
+                costPrice: v.costPrice,
+                price: v.price,
+                quantity: v.quantity,
+                minimumQuantity: v.minimumQuantity,
+                isActive: v.isActive !== undefined ? v.isActive : true,
+                attributes: v.attributes ? (v.attributes as any) : undefined,
+              },
+            });
+          } else {
+            await tx.productVariant.create({
+              data: {
+                productId: input.id,
+                name: v.name,
+                sku: v.sku || `${existingProduct.sku}-${slugify(v.name)}`,
+                barcode: v.barcode || null,
+                imageUrl: v.imageUrl || null,
+                costPrice: v.costPrice ?? existingProduct.costPrice,
+                price: v.price ?? existingProduct.price,
+                quantity: v.quantity ?? 0,
+                minimumQuantity: v.minimumQuantity ?? 5,
+                isActive: v.isActive !== undefined ? v.isActive : true,
+                attributes: v.attributes ? (v.attributes as any) : undefined,
+              },
+            });
+          }
+        }
+      });
+    }
 
     const product = await this.prisma.product.update({
       where: { id: input.id },
       data: {
         ...restInput,
+        hasVariants,
+        options: input.options !== undefined ? (input.options as any) : undefined,
+        quantity: totalQuantity,
+        price: sellingPrice,
         ...(categoryId ? { categoryId } : {}),
         name,
         slug,
@@ -243,6 +389,7 @@ export class ProductService {
       include: {
         category: true,
         brand: true,
+        variants: true,
       },
     });
 

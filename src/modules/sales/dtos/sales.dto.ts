@@ -39,6 +39,14 @@ export class SaleItemInput {
   @IsNumber()
   unitPrice?: number;
 
+  @ApiPropertyOptional({
+    description: 'ID of the product variant being sold (optional)',
+    example: 'cuid_variant_123',
+  })
+  @IsOptional()
+  @IsString()
+  variantId?: string;
+
   @ApiPropertyOptional({ description: 'Description or notes for item' })
   @IsOptional()
   @IsString()

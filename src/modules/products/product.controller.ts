@@ -109,10 +109,10 @@ export class ProductController {
   @ApiBearerAuth('Authorization')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.INVENTORY_CONTROLLER)
   @ApiOperation({
-    summary: 'Create a new product with barcode and Naira pricing',
+    summary: 'Create a new product with barcode and pricing',
   })
   @ApiResponse({ status: 201, description: 'Product created successfully.' })
-  @Post('/create')
+  @Post()
   createProduct(
     @Body() input: CreateProductInput,
     @CurrentUser() user: any,
@@ -126,21 +126,22 @@ export class ProductController {
 
   @ApiBearerAuth('Authorization')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER, UserRole.INVENTORY_CONTROLLER)
-  @ApiOperation({ summary: 'Update a product' })
+  @ApiOperation({ summary: 'Update a product by ID' })
   @ApiResponse({ status: 200, description: 'Product updated successfully.' })
-  @Patch('/update')
+  @Patch(':id')
   updateProduct(
+    @Param('id') id: string,
     @Body() input: UpdateProductInput,
     @CurrentUser() user: any,
   ): Promise<Product> {
-    return this.productService.updateProduct(input, user?.id);
+    return this.productService.updateProduct({ ...input, id }, user?.id);
   }
 
   @ApiBearerAuth('Authorization')
   @Roles(UserRole.ADMIN, UserRole.STORE_MANAGER)
-  @ApiOperation({ summary: 'Delete a product' })
+  @ApiOperation({ summary: 'Delete a product by ID' })
   @ApiResponse({ status: 200, description: 'Product deleted successfully.' })
-  @Delete('/delete/:id')
+  @Delete(':id')
   deleteProduct(@Param('id') id: string): Promise<Product> {
     return this.productService.deleteProduct(id);
   }
